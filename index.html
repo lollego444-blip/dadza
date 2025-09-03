@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email Raw Extractor</title>
+  <style>
+    :root{
+      --bg:#0b1220;--panel:#121a2b;--muted:#6b7a99;--text:#e9f0ff;--accent:#6ea8fe;--accent-2:#7ef0c3;--bad:#ff6b6b;
+      --radius:16px;--gap:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",sans-serif;background:linear-gradient(180deg,#0b1220,#0e1526 40%,#0b1220);color:var(--text)}
+    .app{max-width:1200px;margin:24px auto;padding:0 16px}
+    h1{font-size:clamp(22px,3vw,28px);margin:0 0 18px}
+    .grid{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:rgba(18,26,43,.75);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{color:var(--muted);font-weight:600}
+    textarea{width:100%;min-height:320px;resize:vertical;border-radius:12px;background:#0e1729;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .small{font-size:12px;color:var(--muted)}
+    .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;transition:.2s transform,.2s opacity;display:inline-flex;align-items:center;gap:8px}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),#9ab8ff);color:#0b1220}
+    .btn.sec{background:#1a2440;color:var(--text);border:1px solid rgba(255,255,255,.08)}
+    .btn.warn{background:linear-gradient(135deg,#ff8a8a,var(--bad));color:#0b1220}
+    .tag{background:#19233d;border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;color:#c9d6ff;font-weight:700}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .box{background:#0e1729;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}
+    .kvs{display:grid;grid-template-columns:max-content 1fr;gap:8px 12px}
+    .kvs div:nth-child(odd){color:#9fb2ff}
+    .tabs{display:flex;gap:8px;margin-bottom:8px}
+    .tab{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#16203a;cursor:pointer}
+    .tab.active{background:linear-gradient(135deg,var(--accent-2),#b9ffd8);color:#06281c}
+    iframe{width:100%;min-height:300px;border:none;background:white;border-radius:12px}
+    .footer{margin-top:16px;color:var(--muted);font-size:12px;text-align:center}
+    .hl{color:#b9ffd8}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>📨 Email Raw Extractor</h1>
+    <div class="grid">
+      <section class="card">
+        <div class="row" style="justify-content:space-between">
+          <label>Paste raw email / headers:</label>
+          <div class="chips">
+            <span class="tag">RFC 5322-friendly</span>
+            <span class="tag">Header cleaner</span>
+            <span class="tag">HTML body picker</span>
+          </div>
+        </div>
+        <textarea id="input" placeholder="Paste the whole thing here…"></textarea>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="row" style="gap:12px">
+            <label><input type="checkbox" id="stripNoise" checked> Strip noisy headers (ARC, X-*, Received, etc.)</label>
+            <label><input type="checkbox" id="removeOriginalMessage" checked> Remove any block starting with <span class="hl">"Original Message"</span></label>
+          </div>
+          <div class="row">
+            <button class="btn sec" id="demo">Load sample</button>
+            <button class="btn warn" id="clear">Clear</button>
+            <button class="btn primary" id="run">Extract ▶</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="tabs">
+          <div class="tab active" data-tab="summary">Summary</div>
+          <div class="tab" data-tab="html">HTML (rendered)</div>
+          <div class="tab" data-tab="plaintext">Plain text body</div>
+          <div class="tab" data-tab="headers">Slim headers</div>
+          <div class="tab" data-tab="links">Links</div>
+        </div>
+
+        <div id="pane-summary" class="pane">
+          <div class="box">
+            <div class="kvs" id="summaryKVS"></div>
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px">
+            <button class="btn sec" id="copySummary">Copy summary</button>
+            <button class="btn sec" id="downloadAll">Download outputs (.zip)</button>
+          </div>
+        </div>
+
+        <div id="pane-html" class="pane" style="display:none">
+          <div class="row" style="gap:8px;margin-bottom:8px">
+            <button class="btn sec" id="copyHTML">Copy HTML</button>
+            <button class="btn sec" id="openNew">Open in new tab</button>
+          </div>
+          <iframe id="htmlFrame" sandbox="allow-popups allow-forms allow-scripts"></iframe>
+        </div>
+
+        <div id="pane-plaintext" class="pane" style="display:none">
+          <div class="row" style="gap:8px;margin-bottom:8px">
+            <button class="btn sec" id="copyText">Copy text</button>
+          </div>
+          <textarea id="plainOut" style="min-height:260px"></textarea>
+        </div>
+
+        <div id="pane-headers" class="pane" style="display:none">
+          <div class="row" style="gap:8px;margin-bottom:8px">
+            <button class="btn sec" id="copyHeaders">Copy headers</button>
+          </div>
+          <textarea id="headersOut" style="min-height:260px"></textarea>
+        </div>
+
+        <div id="pane-links" class="pane" style="display:none">
+          <div class="box" id="linksBox">No links yet.</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">Tip: paste Gmail "Show original" or any raw source. Toggle options above to control cleaning.</div>
+  </div>
+
+  <script>
+    const qs = s => document.querySelector(s);
+    const qsa = s => [...document.querySelectorAll(s)];
+    const input = qs('#input');
+
+    const noisyHeaderPrefixes = [
+      'Delivered-To','Received','X-','ARC-','Authentication-Results','Return-Path','Received-SPF','SPF','DMARC','DKIM-Signature','Message-Id','List-Unsubscribe-Post','X-EDM-','Content-Transfer-Encoding'
+    ];
+
+    const keepHeaderNames = ['From','To','Subject','Date','Message-ID','Reply-To','MIME-Version','Content-Type'];
+
+    function unfoldHeaders(block){
+      // join continuation lines (starting with space or tab)
+      return block.replace(/\r?\n[\t ]+/g, ' ');
+    }
+
+    function splitHeaderBody(raw){
+      const m = raw.match(/\r?\n\r?\n/);
+      if(!m) return {header: raw, body: ''};
+      const idx = m.index;
+      return {header: raw.slice(0, idx), body: raw.slice(idx + m[0].length)};
+    }
+
+    function parseHeaders(headerText){
+      const unfolded = unfoldHeaders(headerText);
+      const lines = unfolded.split(/\r?\n/);
+      const headers = {};
+      for(const line of lines){
+        const k = line.split(':')[0];
+        const v = line.slice(k.length+1).trim();
+        if(!k || !v) continue;
+        if(!headers[k]) headers[k] = v; else headers[k] += ' | ' + v;
+      }
+      return headers;
+    }
+
+    function isNoisyHeader(name){
+      return noisyHeaderPrefixes.some(p => name.startsWith(p));
+    }
+
+    function makeSlimHeaders(headers, stripNoise){
+      let out = [];
+      for(const [k,v] of Object.entries(headers)){
+        if(stripNoise && (isNoisyHeader(k))) continue;
+        if(stripNoise && !keepHeaderNames.includes(k)) continue; // whitelist when stripping
+        out.push(`${k}: ${v}`);
+      }
+      return out.join('\n');
+    }
+
+    function removeOriginalMessageBlocks(text){
+      // Remove any section that starts with "Original Message" and runs until a double newline followed by either a boundary, <html>, or end
+      return text.replace(/(^|\n)Original Message[\s\S]*?(?=(\n\n(?:------=|<html|[A-Za-z-]+:)|$))/g, '$1');
+    }
+
+    function extractFirstHtml(body){
+      // Try to find the first <html ...>...</html> block
+      const start = body.search(/<html[\s\S]*?>/i);
+      if(start === -1) return null;
+      const end = body.toLowerCase().indexOf('</html>', start);
+      if(end === -1) return body.slice(start);
+      return body.slice(start, end + 7);
+    }
+
+    function htmlToText(html){
+      const d = new DOMParser().parseFromString(html, 'text/html');
+      return d.body.textContent.trim().replace(/\n{3,}/g,'\n\n');
+    }
+
+    function collectLinks(html){
+      const d = new DOMParser().parseFromString(html, 'text/html');
+      const as = [...d.querySelectorAll('a[href]')];
+      return as.map(a => ({text: (a.textContent||'').trim(), href: a.getAttribute('href')}));
+    }
+
+    function setIframeHTML(iframe, html){
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    }
+
+    function copy(text){
+      navigator.clipboard.writeText(text).then(()=>{
+        toast('Copied to clipboard');
+      }).catch(()=>{});
+    }
+
+    function toast(msg){
+      const t=document.createElement('div');
+      t.textContent=msg; t.style.position='fixed'; t.style.bottom='18px'; t.style.right='18px'; t.style.padding='10px 12px'; t.style.background='rgba(0,0,0,.8)'; t.style.color='white'; t.style.borderRadius='10px'; t.style.zIndex='9999';
+      document.body.appendChild(t); setTimeout(()=>t.remove(),1200);
+    }
+
+    function download(filename, content){
+      const blob = new Blob([content], {type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+    }
+
+    async function zipAndDownload(files){
+      // Tiny ad-hoc zip: we avoid external libs; instead, download individually.
+      // To keep things simple and no deps, we just trigger 3 downloads.
+      files.forEach(f=>download(f.name, f.content));
+      toast('Downloaded outputs');
+    }
+
+    function runExtract(){
+      let raw = input.value || '';
+      const stripNoise = qs('#stripNoise').checked;
+      const removeOM = qs('#removeOriginalMessage').checked;
+
+      if(removeOM){ raw = removeOriginalMessageBlocks(raw); }
+
+      const {header, body} = splitHeaderBody(raw);
+      const headers = parseHeaders(header);
+      const slim = makeSlimHeaders(headers, stripNoise);
+
+      let html = extractFirstHtml(body) || '';
+      let text = '';
+      if(html){
+        setIframeHTML(qs('#htmlFrame'), html);
+        text = htmlToText(html);
+      } else {
+        // fallback: try to find any text/plain part; else use the remainder body
+        text = body.replace(/------=[^\n]+/g,'').trim();
+        qs('#htmlFrame').srcdoc = '<html><body><pre style="white-space:pre-wrap;font-family:ui-monospace;padding:16px">No HTML part found.</pre></body></html>'
+      }
+
+      // Update panes
+      qs('#plainOut').value = text;
+      qs('#headersOut').value = slim;
+
+      // Summary KVS
+      const kvs = qs('#summaryKVS');
+      kvs.innerHTML = '';
+      const keys = ['From','To','Subject','Date','Message-ID'];
+      for(const k of keys){
+        const v = headers[k] || '—';
+        kvs.insertAdjacentHTML('beforeend', `<div>${k}</div><div>${escapeHtml(v)}</div>`);
+      }
+
+      // Links
+      const links = html ? collectLinks(html) : [];
+      const box = qs('#linksBox');
+      box.innerHTML = links.length ? '' : 'No links found.';
+      for(const l of links){
+        const a = document.createElement('a');
+        a.href = l.href; a.textContent = l.text || l.href; a.target = '_blank';
+        const wrap = document.createElement('div');
+        wrap.style.margin = '6px 0';
+        wrap.appendChild(a);
+        const small=document.createElement('div'); small.className='small'; small.textContent = l.href;
+        wrap.appendChild(small);
+        box.appendChild(wrap);
+      }
+
+      // Copy button handlers depend on fresh content
+      qs('#copySummary').onclick = ()=>{
+        const lines = keys.map(k=>`${k}: ${headers[k]||''}`).join('\n');
+        copy(lines);
+      }
+      qs('#copyHTML').onclick = ()=> copy(html || '');
+      qs('#openNew').onclick = ()=>{
+        const w = window.open('', '_blank');
+        w.document.open(); w.document.write(html || '<pre>No HTML part found.</pre>'); w.document.close();
+      }
+      qs('#copyText').onclick = ()=> copy(text);
+      qs('#copyHeaders').onclick = ()=> copy(slim);
+
+      // Allow downloads
+      qs('#downloadAll').onclick = ()=> zipAndDownload([
+        {name:'headers.txt', content: slim},
+        {name:'body.html', content: html || ''},
+        {name:'body.txt', content: text}
+      ]);
+    }
+
+    function escapeHtml(s){
+      return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+
+    // Tabs
+    qsa('.tab').forEach(el=> el.addEventListener('click', ()=>{
+      qsa('.tab').forEach(t=>t.classList.remove('active'));
+      el.classList.add('active');
+      const id = el.dataset.tab;
+      qsa('.pane').forEach(p=>p.style.display='none');
+      qs('#pane-'+id).style.display='block';
+    }));
+
+    // Buttons
+    qs('#run').addEventListener('click', runExtract);
+    qs('#clear').addEventListener('click', ()=>{ input.value=''; });
+
+    // Demo sample (short)
+    qs('#demo').addEventListener('click', ()=>{
+      input.value = `Original Message\nMessage ID\t<id@example.com>\nCreated at: Wed, Sep 3, 2025 13:10\nFrom: TP-Link <noreply@newsletter.tp-link.com>\nTo: you@example.com\nSubject: TP-Link Newsletter\nSPF: PASS\nDKIM: PASS\nDMARC: PASS\n\nDelivered-To: you@example.com\nReceived: by ...\nARC-Seal: ...\n\nContent-Type: multipart/mixed; boundary=\"----=_Part_4247727\"\n\n------=_Part_4247727\nContent-Type: multipart/related; boundary=\"----=_Part_4247728\"\n\n------=_Part_4247728\nContent-Type: text/html;charset=UTF-8\n\n<html><body><div><p>Welcome!</p><p>Please click <a href=\"https://example.com/confirm\">Signup Confirmation</a></p></div></body></html>\n------=_Part_4247728--\n------=_Part_4247727--`;
+      runExtract();
+    });
+  </script>
+</body>
+</html>
