@@ -1,322 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Email Raw Extractor</title>
-  <style>
-    :root{
-      --bg:#0b1220;--panel:#121a2b;--muted:#6b7a99;--text:#e9f0ff;--accent:#6ea8fe;--accent-2:#7ef0c3;--bad:#ff6b6b;
-      --radius:16px;--gap:14px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",sans-serif;background:linear-gradient(180deg,#0b1220,#0e1526 40%,#0b1220);color:var(--text)}
-    .app{max-width:1200px;margin:24px auto;padding:0 16px}
-    h1{font-size:clamp(22px,3vw,28px);margin:0 0 18px}
-    .grid{display:grid;grid-template-columns:1fr;gap:var(--gap)}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:rgba(18,26,43,.75);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    label{color:var(--muted);font-weight:600}
-    textarea{width:100%;min-height:320px;resize:vertical;border-radius:12px;background:#0e1729;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-    .small{font-size:12px;color:var(--muted)}
-    .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;transition:.2s transform,.2s opacity;display:inline-flex;align-items:center;gap:8px}
-    .btn:active{transform:translateY(1px)}
-    .btn.primary{background:linear-gradient(135deg,var(--accent),#9ab8ff);color:#0b1220}
-    .btn.sec{background:#1a2440;color:var(--text);border:1px solid rgba(255,255,255,.08)}
-    .btn.warn{background:linear-gradient(135deg,#ff8a8a,var(--bad));color:#0b1220}
-    .tag{background:#19233d;border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;color:#c9d6ff;font-weight:700}
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .box{background:#0e1729;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}
-    .kvs{display:grid;grid-template-columns:max-content 1fr;gap:8px 12px}
-    .kvs div:nth-child(odd){color:#9fb2ff}
-    .tabs{display:flex;gap:8px;margin-bottom:8px}
-    .tab{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#16203a;cursor:pointer}
-    .tab.active{background:linear-gradient(135deg,var(--accent-2),#b9ffd8);color:#06281c}
-    iframe{width:100%;min-height:300px;border:none;background:white;border-radius:12px}
-    .footer{margin-top:16px;color:var(--muted);font-size:12px;text-align:center}
-    .hl{color:#b9ffd8}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Header Cleaner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        .card {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .dark .card {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: #334155;
+        }
+        .card:hover {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+            transform: translateY(-5px);
+        }
+        .dark .card:hover {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        textarea {
+            transition: all 0.3s ease;
+        }
+        textarea:focus {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+        .dark textarea {
+            background: #475569;
+            border-color: #64748b;
+            color: #e2e8f0;
+        }
+        .dark textarea:focus {
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3);
+        }
+        .btn {
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .dark .btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover:after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 12px;
+            background: #1f2937;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 100;
+        }
+        .dark .tooltip:hover:after {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        .logo-text {
+            background: linear-gradient(90deg, #4F46E5 0%, #EC4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo-circle {
+            background: linear-gradient(135deg, #4F46E5 0%, #EC4899 100%);
+        }
+        .dark .info-section {
+            background: #475569;
+            border-color: #64748b;
+        }
+        .dark .info-section h3 {
+            color: #93c5fd;
+        }
+        .dark .info-section ul {
+            color: #cbd5e1;
+        }
+        .theme-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #cbd5e1;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dark .theme-toggle {
+            background: #475569;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .dark .toggle-thumb {
+            left: 32px;
+            background: #1e293b;
+        }
+        .dark .theme-icon {
+            color: #fbbf24;
+        }
+        .light .theme-icon {
+            color: #1e40af;
+        }
+    </style>
 </head>
-<body>
-  <div class="app">
-    <h1>📨 Email Raw Extractor</h1>
-    <div class="grid">
-      <section class="card">
-        <div class="row" style="justify-content:space-between">
-          <label>Paste raw email / headers:</label>
-          <div class="chips">
-            <span class="tag">RFC 5322-friendly</span>
-            <span class="tag">Header cleaner</span>
-            <span class="tag">HTML body picker</span>
-          </div>
-        </div>
-        <textarea id="input" placeholder="Paste the whole thing here…"></textarea>
-        <div class="row" style="justify-content:space-between;margin-top:10px">
-          <div class="row" style="gap:12px">
-            <label><input type="checkbox" id="stripNoise" checked> Strip noisy headers (ARC, X-*, Received, etc.)</label>
-            <label><input type="checkbox" id="removeOriginalMessage" checked> Remove any block starting with <span class="hl">"Original Message"</span></label>
-          </div>
-          <div class="row">
-            <button class="btn sec" id="demo">Load sample</button>
-            <button class="btn warn" id="clear">Clear</button>
-            <button class="btn primary" id="run">Extract ▶</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="tabs">
-          <div class="tab active" data-tab="summary">Summary</div>
-          <div class="tab" data-tab="html">HTML (rendered)</div>
-          <div class="tab" data-tab="plaintext">Plain text body</div>
-          <div class="tab" data-tab="headers">Slim headers</div>
-          <div class="tab" data-tab="links">Links</div>
+<body class="py-8 px-4 transition-colors duration-300">
+    <div class="max-w-4xl mx-auto">
+        <!-- Theme Toggle -->
+        <div class="flex justify-end mb-6">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-sun light theme-icon"></i>
+                <div class="theme-toggle" id="themeToggle">
+                    <div class="toggle-thumb"></div>
+                </div>
+                <i class="fas fa-moon dark theme-icon"></i>
+            </div>
         </div>
 
-        <div id="pane-summary" class="pane">
-          <div class="box">
-            <div class="kvs" id="summaryKVS"></div>
-          </div>
-          <div class="row" style="margin-top:10px;gap:8px">
-            <button class="btn sec" id="copySummary">Copy summary</button>
-            <button class="btn sec" id="downloadAll">Download outputs (.zip)</button>
-          </div>
+        <!-- Header with Logo -->
+        <header class="text-center mb-10 animate-fadeIn" style="animation-delay: 0.1s;">
+            <div class="flex items-center justify-center mb-4 animate-float">
+                <div class="logo-circle w-16 h-16 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-envelope text-white text-2xl"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold logo-text">WMN2</h1>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300 text-lg">Clean and modify email headers with ease</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="bg-white dark:bg-slate-700 rounded-xl p-6 card animate-fadeIn" style="animation-delay: 0.2s;">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                    <i class="fas fa-pencil-alt mr-2 text-indigo-500"></i>Input Headers
+                </h2>
+                <textarea id="inputText" class="w-full h-60 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:focus:ring-blue-500" placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
+Date: Wed, 3 Sep 2025 08:25:46 -0700 (PDT)
+To: someone@example.com
+Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
+            </div>
+
+            <!-- Options Section -->
+            <div class="bg-white dark:bg-slate-700 rounded-xl p-6 card animate-fadeIn" style="animation-delay: 0.3s;">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                    <i class="fas fa-sliders-h mr-2 text-indigo-500"></i>Processing Options
+                </h2>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domain Replacement:</label>
+                        <input type="text" id="domainReplace" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:focus:ring-blue-500" placeholder="e.g., example.com">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to remove domain entirely</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message-ID Tag:</label>
+                        <input type="text" id="msgTag" value="[EID]" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="deleteOriginal" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
+                        <label for="deleteOriginal" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Delete "Original Message" to "Copy to clipboard" section</label>
+                    </div>
+                </div>
+                
+                <button id="process" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center btn animate-pulse dark:bg-blue-600 dark:hover:bg-blue-700">
+                    <i class="fas fa-magic mr-2"></i>
+                    Process Headers
+                </button>
+            </div>
         </div>
 
-        <div id="pane-html" class="pane" style="display:none">
-          <div class="row" style="gap:8px;margin-bottom:8px">
-            <button class="btn sec" id="copyHTML">Copy HTML</button>
-            <button class="btn sec" id="openNew">Open in new tab</button>
-          </div>
-          <iframe id="htmlFrame" sandbox="allow-popups allow-forms allow-scripts"></iframe>
+        <!-- Result Section -->
+        <div class="bg-white dark:bg-slate-700 rounded-xl p-6 mt-6 card animate-fadeIn" style="animation-delay: 0.4s;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <i class="fas fa-code mr-2 text-indigo-500"></i>Processed Headers
+                </h2>
+                <button id="copyBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center btn tooltip dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-gray-300" data-tooltip="Copy to clipboard">
+                    <i class="fas fa-copy mr-2"></i>
+                    Copy
+                </button>
+            </div>
+            <textarea id="outputText" readonly class="w-full h-48 p-4 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white"></textarea>
         </div>
 
-        <div id="pane-plaintext" class="pane" style="display:none">
-          <div class="row" style="gap:8px;margin-bottom:8px">
-            <button class="btn sec" id="copyText">Copy text</button>
-          </div>
-          <textarea id="plainOut" style="min-height:260px"></textarea>
+        <!-- Info Section -->
+        <div class="mt-6 p-5 bg-indigo-50 rounded-xl border border-indigo-100 animate-fadeIn info-section dark:bg-slate-700 dark:border-slate-600" style="animation-delay: 0.5s;">
+            <h3 class="text-lg font-semibold text-indigo-800 dark:text-blue-300 mb-2 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>How It Works
+            </h3>
+            <ul class="text-indigo-700 dark:text-gray-300 list-disc pl-5 space-y-1">
+                <li>Replaces domains in From addresses with your specified domain</li>
+                <li>Adds a tag to the Message-ID for tracking purposes</li>
+                <li>Standardizes Date and To fields</li>
+                <li>Optionally removes quoted original message content</li>
+            </ul>
         </div>
 
-        <div id="pane-headers" class="pane" style="display:none">
-          <div class="row" style="gap:8px;margin-bottom:8px">
-            <button class="btn sec" id="copyHeaders">Copy headers</button>
-          </div>
-          <textarea id="headersOut" style="min-height:260px"></textarea>
-        </div>
-
-        <div id="pane-links" class="pane" style="display:none">
-          <div class="box" id="linksBox">No links yet.</div>
-        </div>
-      </section>
+        <!-- Footer -->
+        <footer class="text-center mt-10 text-gray-500 dark:text-gray-400 text-sm animate-fadeIn" style="animation-delay: 0.6s;">
+            <p>mohamed hichy-WMN2 &copy; 2025 - All rights reserved</p>
+        </footer>
     </div>
 
-    <div class="footer">Tip: paste Gmail "Show original" or any raw source. Toggle options above to control cleaning.</div>
-  </div>
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        // Check for saved theme preference or use system preference
+        const currentTheme = localStorage.getItem('theme') || 
+                            (prefersDarkScheme.matches ? 'dark' : 'light');
+        
+        // Set initial theme
+        if (currentTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
 
-  <script>
-    const qs = s => document.querySelector(s);
-    const qsa = s => [...document.querySelectorAll(s)];
-    const input = qs('#input');
+        // Add animation classes on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add animation to logo
+            const logo = document.querySelector('.logo-circle');
+            logo.classList.add('animate-float');
+            
+            // Add animation to process button
+            const processBtn = document.getElementById('process');
+            processBtn.classList.add('animate-pulse');
+        });
 
-    const noisyHeaderPrefixes = [
-      'Delivered-To','Received','X-','ARC-','Authentication-Results','Return-Path','Received-SPF','SPF','DMARC','DKIM-Signature','Message-Id','List-Unsubscribe-Post','X-EDM-','Content-Transfer-Encoding'
-    ];
+        function replaceFrom(text, replacement){
+            const repDomain = replacement.trim();
 
-    const keepHeaderNames = ['From','To','Subject','Date','Message-ID','Reply-To','MIME-Version','Content-Type'];
+            // Case 1: From: Name <user@domain>
+            let out = text.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (match, name, user, domain) => {
+                return repDomain
+                    ? `From: ${name.trim()}<${user}@${repDomain}>`
+                    : `From: ${name.trim()}<${user}>`;
+            });
 
-    function unfoldHeaders(block){
-      // join continuation lines (starting with space or tab)
-      return block.replace(/\r?\n[\t ]+/g, ' ');
-    }
+            // Case 2: From: user@domain
+            out = out.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (match, user, domain) => {
+                return repDomain
+                    ? `From: ${user}@${repDomain}`
+                    : `From: ${user}`;
+            });
 
-    function splitHeaderBody(raw){
-      const m = raw.match(/\r?\n\r?\n/);
-      if(!m) return {header: raw, body: ''};
-      const idx = m.index;
-      return {header: raw.slice(0, idx), body: raw.slice(idx + m[0].length)};
-    }
+            return out;
+        }
 
-    function parseHeaders(headerText){
-      const unfolded = unfoldHeaders(headerText);
-      const lines = unfolded.split(/\r?\n/);
-      const headers = {};
-      for(const line of lines){
-        const k = line.split(':')[0];
-        const v = line.slice(k.length+1).trim();
-        if(!k || !v) continue;
-        if(!headers[k]) headers[k] = v; else headers[k] += ' | ' + v;
-      }
-      return headers;
-    }
+        function addTagToMessageId(text, tag){
+            return text.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim, (match, left, right) => {
+                return `Message-ID: <${left}${tag}@${right}>`;
+            });
+        }
 
-    function isNoisyHeader(name){
-      return noisyHeaderPrefixes.some(p => name.startsWith(p));
-    }
+        function deleteOriginalBlock(text){
+            return text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, "");
+        }
 
-    function makeSlimHeaders(headers, stripNoise){
-      let out = [];
-      for(const [k,v] of Object.entries(headers)){
-        if(stripNoise && (isNoisyHeader(k))) continue;
-        if(stripNoise && !keepHeaderNames.includes(k)) continue; // whitelist when stripping
-        out.push(`${k}: ${v}`);
-      }
-      return out.join('\n');
-    }
+        function replaceDateAndTo(text){
+            // Replace Date line
+            let out = text.replace(/^Date:.*$/gim, "Date: [DATE]");
+            // Replace To line
+            out = out.replace(/^To:.*$/gim, "To: [*to]");
+            return out;
+        }
 
-    function removeOriginalMessageBlocks(text){
-      // Remove any section that starts with "Original Message" and runs until a double newline followed by either a boundary, <html>, or end
-      return text.replace(/(^|\n)Original Message[\s\S]*?(?=(\n\n(?:------=|<html|[A-Za-z-]+:)|$))/g, '$1');
-    }
+        document.getElementById('process').addEventListener('click', () => {
+            let input = document.getElementById('inputText').value;
+            const rep = document.getElementById('domainReplace').value;
+            const tag = document.getElementById('msgTag').value.trim();
+            const delOrig = document.getElementById('deleteOriginal').checked;
 
-    function extractFirstHtml(body){
-      // Try to find the first <html ...>...</html> block
-      const start = body.search(/<html[\s\S]*?>/i);
-      if(start === -1) return null;
-      const end = body.toLowerCase().indexOf('</html>', start);
-      if(end === -1) return body.slice(start);
-      return body.slice(start, end + 7);
-    }
+            // Add processing animation
+            const processBtn = document.getElementById('process');
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            processBtn.classList.remove('animate-pulse');
+            
+            setTimeout(() => {
+                // Step 1: replace From domains
+                let result = replaceFrom(input, rep);
 
-    function htmlToText(html){
-      const d = new DOMParser().parseFromString(html, 'text/html');
-      return d.body.textContent.trim().replace(/\n{3,}/g,'\n\n');
-    }
+                // Step 2: add tag in Message-ID
+                if(tag) result = addTagToMessageId(result, tag);
 
-    function collectLinks(html){
-      const d = new DOMParser().parseFromString(html, 'text/html');
-      const as = [...d.querySelectorAll('a[href]')];
-      return as.map(a => ({text: (a.textContent||'').trim(), href: a.getAttribute('href')}));
-    }
+                // Step 3: replace Date & To
+                result = replaceDateAndTo(result);
 
-    function setIframeHTML(iframe, html){
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(html);
-      doc.close();
-    }
+                // Step 4: delete Original Message block
+                if(delOrig) result = deleteOriginalBlock(result);
 
-    function copy(text){
-      navigator.clipboard.writeText(text).then(()=>{
-        toast('Copied to clipboard');
-      }).catch(()=>{});
-    }
+                document.getElementById('outputText').value = result;
+                
+                // Reset button
+                processBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Done!';
+                setTimeout(() => {
+                    processBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>Process Headers';
+                    processBtn.classList.add('animate-pulse');
+                }, 1500);
+                
+                // Add success animation to result area
+                const outputArea = document.getElementById('outputText');
+                outputArea.classList.add('bg-green-50', 'dark:bg-green-900/30');
+                setTimeout(() => {
+                    outputArea.classList.remove('bg-green-50', 'dark:bg-green-900/30');
+                }, 1000);
+            }, 800);
+        });
 
-    function toast(msg){
-      const t=document.createElement('div');
-      t.textContent=msg; t.style.position='fixed'; t.style.bottom='18px'; t.style.right='18px'; t.style.padding='10px 12px'; t.style.background='rgba(0,0,0,.8)'; t.style.color='white'; t.style.borderRadius='10px'; t.style.zIndex='9999';
-      document.body.appendChild(t); setTimeout(()=>t.remove(),1200);
-    }
-
-    function download(filename, content){
-      const blob = new Blob([content], {type:'text/plain'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
-    }
-
-    async function zipAndDownload(files){
-      // Tiny ad-hoc zip: we avoid external libs; instead, download individually.
-      // To keep things simple and no deps, we just trigger 3 downloads.
-      files.forEach(f=>download(f.name, f.content));
-      toast('Downloaded outputs');
-    }
-
-    function runExtract(){
-      let raw = input.value || '';
-      const stripNoise = qs('#stripNoise').checked;
-      const removeOM = qs('#removeOriginalMessage').checked;
-
-      if(removeOM){ raw = removeOriginalMessageBlocks(raw); }
-
-      const {header, body} = splitHeaderBody(raw);
-      const headers = parseHeaders(header);
-      const slim = makeSlimHeaders(headers, stripNoise);
-
-      let html = extractFirstHtml(body) || '';
-      let text = '';
-      if(html){
-        setIframeHTML(qs('#htmlFrame'), html);
-        text = htmlToText(html);
-      } else {
-        // fallback: try to find any text/plain part; else use the remainder body
-        text = body.replace(/------=[^\n]+/g,'').trim();
-        qs('#htmlFrame').srcdoc = '<html><body><pre style="white-space:pre-wrap;font-family:ui-monospace;padding:16px">No HTML part found.</pre></body></html>'
-      }
-
-      // Update panes
-      qs('#plainOut').value = text;
-      qs('#headersOut').value = slim;
-
-      // Summary KVS
-      const kvs = qs('#summaryKVS');
-      kvs.innerHTML = '';
-      const keys = ['From','To','Subject','Date','Message-ID'];
-      for(const k of keys){
-        const v = headers[k] || '—';
-        kvs.insertAdjacentHTML('beforeend', `<div>${k}</div><div>${escapeHtml(v)}</div>`);
-      }
-
-      // Links
-      const links = html ? collectLinks(html) : [];
-      const box = qs('#linksBox');
-      box.innerHTML = links.length ? '' : 'No links found.';
-      for(const l of links){
-        const a = document.createElement('a');
-        a.href = l.href; a.textContent = l.text || l.href; a.target = '_blank';
-        const wrap = document.createElement('div');
-        wrap.style.margin = '6px 0';
-        wrap.appendChild(a);
-        const small=document.createElement('div'); small.className='small'; small.textContent = l.href;
-        wrap.appendChild(small);
-        box.appendChild(wrap);
-      }
-
-      // Copy button handlers depend on fresh content
-      qs('#copySummary').onclick = ()=>{
-        const lines = keys.map(k=>`${k}: ${headers[k]||''}`).join('\n');
-        copy(lines);
-      }
-      qs('#copyHTML').onclick = ()=> copy(html || '');
-      qs('#openNew').onclick = ()=>{
-        const w = window.open('', '_blank');
-        w.document.open(); w.document.write(html || '<pre>No HTML part found.</pre>'); w.document.close();
-      }
-      qs('#copyText').onclick = ()=> copy(text);
-      qs('#copyHeaders').onclick = ()=> copy(slim);
-
-      // Allow downloads
-      qs('#downloadAll').onclick = ()=> zipAndDownload([
-        {name:'headers.txt', content: slim},
-        {name:'body.html', content: html || ''},
-        {name:'body.txt', content: text}
-      ]);
-    }
-
-    function escapeHtml(s){
-      return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-    }
-
-    // Tabs
-    qsa('.tab').forEach(el=> el.addEventListener('click', ()=>{
-      qsa('.tab').forEach(t=>t.classList.remove('active'));
-      el.classList.add('active');
-      const id = el.dataset.tab;
-      qsa('.pane').forEach(p=>p.style.display='none');
-      qs('#pane-'+id).style.display='block';
-    }));
-
-    // Buttons
-    qs('#run').addEventListener('click', runExtract);
-    qs('#clear').addEventListener('click', ()=>{ input.value=''; });
-
-    // Demo sample (short)
-    qs('#demo').addEventListener('click', ()=>{
-      input.value = `Original Message\nMessage ID\t<id@example.com>\nCreated at: Wed, Sep 3, 2025 13:10\nFrom: TP-Link <noreply@newsletter.tp-link.com>\nTo: you@example.com\nSubject: TP-Link Newsletter\nSPF: PASS\nDKIM: PASS\nDMARC: PASS\n\nDelivered-To: you@example.com\nReceived: by ...\nARC-Seal: ...\n\nContent-Type: multipart/mixed; boundary=\"----=_Part_4247727\"\n\n------=_Part_4247727\nContent-Type: multipart/related; boundary=\"----=_Part_4247728\"\n\n------=_Part_4247728\nContent-Type: text/html;charset=UTF-8\n\n<html><body><div><p>Welcome!</p><p>Please click <a href=\"https://example.com/confirm\">Signup Confirmation</a></p></div></body></html>\n------=_Part_4247728--\n------=_Part_4247727--`;
-      runExtract();
-    });
-  </script>
+        // Copy button functionality
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const outputText = document.getElementById('outputText');
+            outputText.select();
+            document.execCommand('copy');
+            
+            // Show temporary feedback
+            const copyBtn = document.getElementById('copyBtn');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            copyBtn.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-300');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('bg-green-100', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-300');
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
