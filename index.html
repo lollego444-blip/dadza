@@ -95,14 +95,33 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message-ID Tag:</label>
                         <input type="text" id="msgTag" value="[EID]" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:focus:ring-blue-500">
                     </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="deleteOriginal" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
-                        <label for="deleteOriginal" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Delete "Original Message" block</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="keepReceived" checked class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
-                        <label for="keepReceived" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Keep "Received:" headers</label>
-                    </div>
+                   <div class="flex items-center">
+    <input type="checkbox" id="deleteOriginal" checked
+        class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded 
+               dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
+    <label for="deleteOriginal" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">
+        Delete "Original Message" block
+    </label>
+</div>
+
+<div class="flex items-center">
+    <input type="checkbox" id="keepReceived" checked
+        class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded 
+               dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
+    <label for="keepReceived" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">
+        Keep "Received:" headers
+    </label>
+</div>
+
+<div class="flex items-center mt-3">
+    <input type="checkbox" id="keepReplyTo" checked
+        class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded 
+               dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
+    <label for="keepReplyTo" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">
+        Keep "Reply-To:" headers
+    </label>
+</div>
+
                 </div>
                 <button id="process" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center btn animate-pulse dark:bg-blue-600 dark:hover:bg-blue-700">
                     <i class="fas fa-magic mr-2"></i>Process Headers
@@ -167,35 +186,59 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
         function deleteOriginalBlock(text){ return text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, ""); }
         function replaceDateAndTo(text){ return text.replace(/^Date:.*$/gim, "Date: [DATE]").replace(/^To:.*$/gim, "To: [*to]"); }
 
-        function deleteSpecificHeaders(text) {
-            const lines = text.split(/\r?\n/);
-            const headersToDelete = [
-                'ARC-Authentication-Results:',
-                'ARC-Message-Signature:',
-                'Delivered-To:',
-                'DKIM-Signature:',
-                'Authentication-Results:',
-                'Received-SPF:',
-                'Return-Path:',
-                'X-Received:',
-                'X-Google-Smtp-Source:',
-                'ARC-Seal:',
-                'Received:'
-            ];
-            const keepReceived = document.getElementById('keepReceived').checked;
-            const result = []; let skip = false;
-            for (let line of lines) {
-                if (headersToDelete.some(h => line.toLowerCase().startsWith(h.toLowerCase()))) {
-                    if (keepReceived && line.toLowerCase().startsWith("received:")) {
-                        skip = false; result.push(line); continue;
-                    }
-                    skip = true; continue;
-                }
-                if (skip && /^[ \t]/.test(line)) continue;
-                skip = false; result.push(line);
+       function deleteSpecificHeaders(text) {
+    const keepReceived = document.getElementById('keepReceived').checked;
+    const keepReplyTo = document.getElementById('keepReplyTo').checked;
+
+    const lines = text.split(/\r?\n/);
+    const headersToDelete = [
+        'ARC-Authentication-Results:',
+        'ARC-Message-Signature:',
+        'Delivered-To:',
+        'DKIM-Signature:',
+        'Authentication-Results:',
+        'Received-SPF:',
+        'Return-Path:',
+        'X-Received:',
+        'X-Google-Smtp-Source:',
+        'ARC-Seal:',
+        'Received:',      // handled by checkbox
+        'Reply-To:'       // handled by checkbox
+    ];
+
+    const result = [];
+    let skip = false;
+
+    for (let line of lines) {
+        // Skip if header is in delete list
+        if (headersToDelete.some(h => line.toLowerCase().startsWith(h.toLowerCase()))) {
+            // If it's "Received" but keepReceived is ON → keep it
+            if (line.toLowerCase().startsWith("received:") && keepReceived) {
+                result.push(line);
+                skip = false;
+                continue;
             }
-            return result.join('\n');
+            // If it's "Reply-To" but keepReplyTo is ON → keep it
+            if (line.toLowerCase().startsWith("reply-to:") && keepReplyTo) {
+                result.push(line);
+                skip = false;
+                continue;
+            }
+            skip = true;
+            continue;
         }
+
+        // Skip continuation lines
+        if (skip && /^[ \t]/.test(line)) {
+            continue;
+        }
+
+        skip = false;
+        result.push(line);
+    }
+
+    return result.join('\n');
+}
 
         // Processing
         document.getElementById('process').addEventListener('click', () => {
