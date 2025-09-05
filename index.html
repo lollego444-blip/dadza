@@ -8,153 +8,42 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-        .dark body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        }
-        .card {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-        .dark .card {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            background: #334155;
-        }
-        .card:hover {
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-            transform: translateY(-5px);
-        }
-        .dark .card:hover {
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-        }
-        textarea {
-            transition: all 0.3s ease;
-        }
-        textarea:focus {
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-        }
-        .dark textarea {
-            background: #475569;
-            border-color: #64748b;
-            color: #e2e8f0;
-        }
-        .dark textarea:focus {
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3);
-        }
-        .btn {
-            transition: all 0.3s ease;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        .dark .btn:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        }
-        .tooltip {
-            position: relative;
-        }
-        .tooltip:hover:after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 6px 12px;
-            background: #1f2937;
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 100;
-        }
-        .dark .tooltip:hover:after {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
-        }
-        .animate-fadeIn {
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-        .animate-pulse {
-            animation: pulse 2s infinite;
-        }
-        .animate-float {
-            animation: float 3s ease-in-out infinite;
-        }
-        .logo-text {
-            background: linear-gradient(90deg, #4F46E5 0%, #EC4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .logo-circle {
-            background: linear-gradient(135deg, #4F46E5 0%, #EC4899 100%);
-        }
-        .dark .info-section {
-            background: #475569;
-            border-color: #64748b;
-        }
-        .dark .info-section h3 {
-            color: #93c5fd;
-        }
-        .dark .info-section ul {
-            color: #cbd5e1;
-        }
-        .theme-toggle {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: #cbd5e1;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .dark .theme-toggle {
-            background: #475569;
-        }
-        .toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 26px;
-            height: 26px;
-            background: white;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-        .dark .toggle-thumb {
-            left: 32px;
-            background: #1e293b;
-        }
-        .dark .theme-icon {
-            color: #fbbf24;
-        }
-        .light .theme-icon {
-            color: #1e40af;
-        }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%); min-height: 100vh; transition: all 0.3s ease; }
+        .dark body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .card { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); transition: all 0.3s ease; }
+        .dark .card { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); background: #334155; }
+        .card:hover { box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); transform: translateY(-5px); }
+        .dark .card:hover { box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); }
+        textarea { transition: all 0.3s ease; }
+        textarea:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+        .dark textarea { background: #475569; border-color: #64748b; color: #e2e8f0; }
+        .dark textarea:focus { box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3); }
+        .btn { transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .dark .btn:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+        .tooltip { position: relative; }
+        .tooltip:hover:after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding: 6px 12px; background: #1f2937; color: white; border-radius: 4px; font-size: 12px; white-space: nowrap; z-index: 100; }
+        .dark .tooltip:hover:after { background: #e2e8f0; color: #1e293b; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .logo-text { background: linear-gradient(90deg, #4F46E5 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-circle { background: linear-gradient(135deg, #4F46E5 0%, #EC4899 100%); }
+        .dark .info-section { background: #475569; border-color: #64748b; }
+        .dark .info-section h3 { color: #93c5fd; }
+        .dark .info-section ul { color: #cbd5e1; }
+        .theme-toggle { position: relative; width: 60px; height: 30px; background: #cbd5e1; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; }
+        .dark .theme-toggle { background: #475569; }
+        .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; background: white; border-radius: 50%; transition: all 0.3s ease; }
+        .dark .toggle-thumb { left: 32px; background: #1e293b; }
+        .dark .theme-icon { color: #fbbf24; }
+        .light .theme-icon { color: #1e40af; }
     </style>
 </head>
 <body class="py-8 px-4 transition-colors duration-300">
@@ -163,14 +52,12 @@
         <div class="flex justify-end mb-6">
             <div class="flex items-center space-x-2">
                 <i class="fas fa-sun light theme-icon"></i>
-                <div class="theme-toggle" id="themeToggle">
-                    <div class="toggle-thumb"></div>
-                </div>
+                <div class="theme-toggle" id="themeToggle"><div class="toggle-thumb"></div></div>
                 <i class="fas fa-moon dark theme-icon"></i>
             </div>
         </div>
 
-        <!-- Header with Logo -->
+        <!-- Header -->
         <header class="text-center mb-10 animate-fadeIn" style="animation-delay: 0.1s;">
             <div class="flex items-center justify-center mb-4 animate-float">
                 <div class="logo-circle w-16 h-16 rounded-full flex items-center justify-center mr-3">
@@ -198,28 +85,27 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
                     <i class="fas fa-sliders-h mr-2 text-indigo-500"></i>Processing Options
                 </h2>
-                
                 <div class="space-y-5">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domain Replacement:</label>
                         <input type="text" id="domainReplace" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:focus:ring-blue-500" placeholder="e.g., example.com">
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to remove domain entirely</p>
                     </div>
-                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message-ID Tag:</label>
                         <input type="text" id="msgTag" value="[EID]" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:focus:ring-blue-500">
                     </div>
-                    
                     <div class="flex items-center">
                         <input type="checkbox" id="deleteOriginal" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
-                        <label for="deleteOriginal" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Delete "Original Message" to "Copy to clipboard" section</label>
+                        <label for="deleteOriginal" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Delete "Original Message" block</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="keepReceived" checked class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-slate-600 dark:border-slate-500 dark:focus:ring-blue-500">
+                        <label for="keepReceived" class="ml-3 block text-sm text-gray-700 dark:text-gray-300">Keep "Received:" headers</label>
                     </div>
                 </div>
-                
                 <button id="process" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center btn animate-pulse dark:bg-blue-600 dark:hover:bg-blue-700">
-                    <i class="fas fa-magic mr-2"></i>
-                    Process Headers
+                    <i class="fas fa-magic mr-2"></i>Process Headers
                 </button>
             </div>
         </div>
@@ -231,8 +117,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                     <i class="fas fa-code mr-2 text-indigo-500"></i>Processed Headers
                 </h2>
                 <button id="copyBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center btn tooltip dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-gray-300" data-tooltip="Copy to clipboard">
-                    <i class="fas fa-copy mr-2"></i>
-                    Copy
+                    <i class="fas fa-copy mr-2"></i>Copy
                 </button>
             </div>
             <textarea id="outputText" readonly class="w-full h-48 p-4 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-slate-600 dark:border-slate-500 dark:text-white"></textarea>
@@ -245,147 +130,97 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
             </h3>
             <ul class="text-indigo-700 dark:text-gray-300 list-disc pl-5 space-y-1">
                 <li>Replaces domains in From addresses with your specified domain</li>
-                <li>Adds a tag to the Message-ID for tracking purposes</li>
+                <li>Adds a tag to the Message-ID for tracking</li>
                 <li>Standardizes Date and To fields</li>
                 <li>Optionally removes quoted original message content</li>
+                <li>Removes ARC, Delivered-To, DKIM, SPF headers</li>
+                <li>Option to keep/remove Received headers</li>
             </ul>
         </div>
 
-        <!-- Footer -->
         <footer class="text-center mt-10 text-gray-500 dark:text-gray-400 text-sm animate-fadeIn" style="animation-delay: 0.6s;">
             <p>mohamed hichy-WMN2 &copy; 2025 - All rights reserved</p>
         </footer>
     </div>
 
     <script>
-        // Theme toggle functionality
+        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
         const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        // Check for saved theme preference or use system preference
-        const currentTheme = localStorage.getItem('theme') || 
-                            (prefersDarkScheme.matches ? 'dark' : 'light');
-        
-        // Set initial theme
-        if (currentTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        
-        // Toggle theme
+        const currentTheme = localStorage.getItem('theme') || (prefersDarkScheme.matches ? 'dark' : 'light');
+        if (currentTheme === 'dark') document.documentElement.classList.add('dark');
         themeToggle.addEventListener('click', () => {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
 
-        // Add animation classes on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add animation to logo
-            const logo = document.querySelector('.logo-circle');
-            logo.classList.add('animate-float');
-            
-            // Add animation to process button
-            const processBtn = document.getElementById('process');
-            processBtn.classList.add('animate-pulse');
-        });
-
+        // Functions
         function replaceFrom(text, replacement){
             const repDomain = replacement.trim();
-
-            // Case 1: From: Name <user@domain>
-            let out = text.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (match, name, user, domain) => {
-                return repDomain
-                    ? `From: ${name.trim()}<${user}@${repDomain}>`
-                    : `From: ${name.trim()}<${user}>`;
-            });
-
-            // Case 2: From: user@domain
-            out = out.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (match, user, domain) => {
-                return repDomain
-                    ? `From: ${user}@${repDomain}`
-                    : `From: ${user}`;
-            });
-
+            let out = text.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (m, name, user) => repDomain ? `From: ${name.trim()}<${user}@${repDomain}>` : `From: ${name.trim()}<${user}>`);
+            out = out.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (m, user) => repDomain ? `From: ${user}@${repDomain}` : `From: ${user}`);
             return out;
         }
-
         function addTagToMessageId(text, tag){
-            return text.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim, (match, left, right) => {
-                return `Message-ID: <${left}${tag}@${right}>`;
-            });
+            return text.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim, (m, left, right) => `Message-ID: <${left}${tag}@${right}>`);
+        }
+        function deleteOriginalBlock(text){ return text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, ""); }
+        function replaceDateAndTo(text){ return text.replace(/^Date:.*$/gim, "Date: [DATE]").replace(/^To:.*$/gim, "To: [*to]"); }
+
+        function deleteSpecificHeaders(text) {
+            const lines = text.split(/\r?\n/);
+            const headersToDelete = [
+                'ARC-Authentication-Results:',
+                'ARC-Message-Signature:',
+                'Delivered-To:',
+                'DKIM-Signature:',
+                'Authentication-Results:',
+                'Received-SPF:',
+                'Return-Path:',
+                'X-Received:',
+                'X-Google-Smtp-Source:',
+                'ARC-Seal:',
+                'Received:'
+            ];
+            const keepReceived = document.getElementById('keepReceived').checked;
+            const result = []; let skip = false;
+            for (let line of lines) {
+                if (headersToDelete.some(h => line.toLowerCase().startsWith(h.toLowerCase()))) {
+                    if (keepReceived && line.toLowerCase().startsWith("received:")) {
+                        skip = false; result.push(line); continue;
+                    }
+                    skip = true; continue;
+                }
+                if (skip && /^[ \t]/.test(line)) continue;
+                skip = false; result.push(line);
+            }
+            return result.join('\n');
         }
 
-        function deleteOriginalBlock(text){
-            return text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, "");
-        }
-
-        function replaceDateAndTo(text){
-            // Replace Date line
-            let out = text.replace(/^Date:.*$/gim, "Date: [DATE]");
-            // Replace To line
-            out = out.replace(/^To:.*$/gim, "To: [*to]");
-            return out;
-        }
-
+        // Processing
         document.getElementById('process').addEventListener('click', () => {
             let input = document.getElementById('inputText').value;
             const rep = document.getElementById('domainReplace').value;
             const tag = document.getElementById('msgTag').value.trim();
             const delOrig = document.getElementById('deleteOriginal').checked;
 
-            // Add processing animation
-            const processBtn = document.getElementById('process');
-            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-            processBtn.classList.remove('animate-pulse');
-            
-            setTimeout(() => {
-                // Step 1: replace From domains
-                let result = replaceFrom(input, rep);
+            let result = replaceFrom(input, rep);
+            if(tag) result = addTagToMessageId(result, tag);
+            result = replaceDateAndTo(result);
+            if(delOrig) result = deleteOriginalBlock(result);
+            result = deleteSpecificHeaders(result);
 
-                // Step 2: add tag in Message-ID
-                if(tag) result = addTagToMessageId(result, tag);
-
-                // Step 3: replace Date & To
-                result = replaceDateAndTo(result);
-
-                // Step 4: delete Original Message block
-                if(delOrig) result = deleteOriginalBlock(result);
-
-                document.getElementById('outputText').value = result;
-                
-                // Reset button
-                processBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Done!';
-                setTimeout(() => {
-                    processBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>Process Headers';
-                    processBtn.classList.add('animate-pulse');
-                }, 1500);
-                
-                // Add success animation to result area
-                const outputArea = document.getElementById('outputText');
-                outputArea.classList.add('bg-green-50', 'dark:bg-green-900/30');
-                setTimeout(() => {
-                    outputArea.classList.remove('bg-green-50', 'dark:bg-green-900/30');
-                }, 1000);
-            }, 800);
+            document.getElementById('outputText').value = result;
         });
 
-        // Copy button functionality
+        // Copy
         document.getElementById('copyBtn').addEventListener('click', () => {
             const outputText = document.getElementById('outputText');
-            outputText.select();
-            document.execCommand('copy');
-            
-            // Show temporary feedback
+            outputText.select(); document.execCommand('copy');
             const copyBtn = document.getElementById('copyBtn');
-            const originalText = copyBtn.innerHTML;
+            const original = copyBtn.innerHTML;
             copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
-            copyBtn.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-300');
-            
-            setTimeout(() => {
-                copyBtn.innerHTML = originalText;
-                copyBtn.classList.remove('bg-green-100', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-300');
-            }, 2000);
+            setTimeout(() => { copyBtn.innerHTML = original; }, 2000);
         });
     </script>
 </body>
