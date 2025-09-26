@@ -465,6 +465,13 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                                 Keep "Reply-To:" headers
                             </label>
                         </div>
+                        <div class="option-item checkbox-wrapper">
+                            <input type="checkbox" id="addCc" class="mr-3">
+                            <span class="checkmark mr-3"></span>
+                            <label for="addCc" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                                Add "Cc: [*to]" if CC header doesn't exist
+                            </label>
+                        </div>
                     </div>
                     <button id="process" class="w-full mt-8 btn-primary text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center">
                         <i class="fas fa-sparkles mr-2"></i>Process Headers
@@ -500,6 +507,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                 <li>Optionally removes quoted original message content</li>
                 <li>Removes ARC, Delivered-To, DKIM, SPF headers</li>
                 <li>Option to keep/remove Received headers</li>
+                <li>Option to add CC header if it doesn't exist</li>
             </ul>
         </div>
 
@@ -601,6 +609,47 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
             return result.join('\n');
         }
 
+        // Function to add CC header if it doesn't exist
+        function addCcIfMissing(text) {
+            // Check if CC header already exists
+            const hasCc = /^Cc:/im.test(text);
+            
+            if (!hasCc) {
+                // Find the position after the To header to insert CC
+                const lines = text.split(/\r?\n/);
+                let insertIndex = -1;
+                
+                // Look for To header and insert CC after it
+                for (let i = 0; i < lines.length; i++) {
+                    if (/^To:/i.test(lines[i])) {
+                        insertIndex = i + 1;
+                        break;
+                    }
+                }
+                
+                // If To header not found, insert after From header
+                if (insertIndex === -1) {
+                    for (let i = 0; i < lines.length; i++) {
+                        if (/^From:/i.test(lines[i])) {
+                            insertIndex = i + 1;
+                            break;
+                        }
+                    }
+                }
+                
+                // If neither To nor From found, insert at the beginning
+                if (insertIndex === -1) {
+                    insertIndex = 0;
+                }
+                
+                // Insert the CC header
+                lines.splice(insertIndex, 0, "Cc: [*to]");
+                return lines.join('\n');
+            }
+            
+            return text;
+        }
+
         // Processing
         document.getElementById('process').addEventListener('click', () => {
             // Add animation to process button
@@ -612,12 +661,18 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                 const rep = document.getElementById('domainReplace').value;
                 const tag = document.getElementById('msgTag').value.trim();
                 const delOrig = document.getElementById('deleteOriginal').checked;
+                const addCc = document.getElementById('addCc').checked;
 
                 let result = replaceFrom(input, rep);
                 if(tag) result = addTagToMessageId(result, tag);
                 result = replaceDateAndTo(result);
                 if(delOrig) result = deleteOriginalBlock(result);
                 result = deleteSpecificHeaders(result);
+                
+                // Add CC header if checkbox is checked
+                if (addCc) {
+                    result = addCcIfMissing(result);
+                }
 
                 document.getElementById('outputText').value = result;
                 processBtn.classList.remove('animate-pulse');
@@ -641,4 +696,3 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     </script>
 </body>
 </html>
-
