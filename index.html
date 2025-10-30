@@ -444,13 +444,23 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message-ID Tag:</label>
                             <input type="text" id="msgTag" value="[EID]" class="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white">
                         </div>
+                        
+                        <!-- Separate checkboxes for Date and To -->
                         <div class="option-item checkbox-wrapper">
-                            <input type="checkbox" id="deleteOriginal" checked class="mr-3">
+                            <input type="checkbox" id="replaceDate" checked class="mr-3">
                             <span class="checkmark mr-3"></span>
-                            <label for="deleteOriginal" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                                Delete "Original Message" block
+                            <label for="replaceDate" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                                Replace Date with [DATE] placeholder
                             </label>
                         </div>
+                        <div class="option-item checkbox-wrapper">
+                            <input type="checkbox" id="replaceTo" checked class="mr-3">
+                            <span class="checkmark mr-3"></span>
+                            <label for="replaceTo" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                                Replace To with [*to] placeholder
+                            </label>
+                        </div>
+                        
                         <div class="option-item checkbox-wrapper">
                             <input type="checkbox" id="keepReceived" checked class="mr-3">
                             <span class="checkmark mr-3"></span>
@@ -503,8 +513,8 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
             <ul class="text-blue-700 dark:text-blue-100 list-disc pl-5 space-y-2">
                 <li>Replaces domains in From addresses with your specified domain</li>
                 <li>Adds a tag to the Message-ID for tracking</li>
-                <li>Standardizes Date and To fields</li>
-                <li>Optionally removes quoted original message content</li>
+                <li>Optionally replaces Date and To fields with placeholders</li>
+                <li>Automatically removes "Original Message" and "Message d'origine" blocks</li>
                 <li>Removes ARC, Delivered-To, DKIM, SPF headers</li>
                 <li>Option to keep/remove Received headers</li>
                 <li>Option to add CC header if it doesn't exist</li>
@@ -551,11 +561,21 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
         }
         
         function deleteOriginalBlock(text){ 
-            return text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, ""); 
+            // English version - handles "Original Message" to "Copy to clipboard"
+            let result = text.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, "");
+            
+            // French version - handles "Message d'origine" to "Copier dans le presse-papiers"
+            result = result.replace(/Message d'origine[\s\S]*?Copier dans le presse-papiers\s*/gi, "");
+            
+            return result;
         }
         
-        function replaceDateAndTo(text){ 
-            return text.replace(/^Date:.*$/gim, "Date: [DATE]").replace(/^To:.*$/gim, "To: [*to]"); 
+        function replaceDate(text){ 
+            return text.replace(/^Date:.*$/gim, "Date: [DATE]");
+        }
+        
+        function replaceTo(text){ 
+            return text.replace(/^To:.*$/gim, "To: [*to]");
         }
 
         function deleteSpecificHeaders(text) {
@@ -660,13 +680,26 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
                 let input = document.getElementById('inputText').value;
                 const rep = document.getElementById('domainReplace').value;
                 const tag = document.getElementById('msgTag').value.trim();
-                const delOrig = document.getElementById('deleteOriginal').checked;
+                const replaceDateChecked = document.getElementById('replaceDate').checked;
+                const replaceToChecked = document.getElementById('replaceTo').checked;
                 const addCc = document.getElementById('addCc').checked;
 
                 let result = replaceFrom(input, rep);
                 if(tag) result = addTagToMessageId(result, tag);
-                result = replaceDateAndTo(result);
-                if(delOrig) result = deleteOriginalBlock(result);
+                
+                // Only replace Date if checkbox is checked
+                if (replaceDateChecked) {
+                    result = replaceDate(result);
+                }
+                
+                // Only replace To if checkbox is checked
+                if (replaceToChecked) {
+                    result = replaceTo(result);
+                }
+                
+                // Automatically clean both English and French original message blocks
+                result = deleteOriginalBlock(result);
+                
                 result = deleteSpecificHeaders(result);
                 
                 // Add CC header if checkbox is checked
