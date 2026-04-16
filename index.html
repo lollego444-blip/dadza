@@ -6,265 +6,518 @@
 <title>WMN2 — Email Header Cleaner</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        mono: ['DM Mono', 'monospace'],
-      },
-      colors: {
-        zinc: {
-          925: '#0f0f10',
-          950: '#09090b',
-        }
-      },
-      animation: {
-        'fade-up': 'fadeUp 0.5s ease forwards',
-      },
-      keyframes: {
-        fadeUp: {
-          from: { opacity: '0', transform: 'translateY(12px)' },
-          to:   { opacity: '1', transform: 'translateY(0)' },
-        }
-      }
-    }
-  }
-}
-</script>
 <style>
-  body { background: #09090b; font-family: 'Syne', sans-serif; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-  textarea, input[type=text] {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    caret-color: #a1a1aa;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  textarea:focus, input[type=text]:focus {
-    outline: none;
-    border-color: #52525b !important;
-    box-shadow: 0 0 0 3px rgba(255,255,255,.04);
-  }
-  .chip {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    transition: all .15s ease;
-  }
-  .chip:hover { transform: translateY(-1px); }
-  .toggle-track { transition: background .2s, border-color .2s; }
-  .toggle-thumb { transition: left .2s cubic-bezier(.4,0,.2,1), background .2s; }
-  .process-btn:hover { letter-spacing: 1.5px; }
-  .process-btn { transition: all .25s ease; }
-  .card-glass {
-    background: rgba(24,24,27,.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(63,63,70,.5);
-  }
-  .glow-line {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
-  }
-  [data-delay="1"] { animation-delay: .05s; opacity: 0; }
-  [data-delay="2"] { animation-delay: .12s; opacity: 0; }
-  [data-delay="3"] { animation-delay: .20s; opacity: 0; }
-  [data-delay="4"] { animation-delay: .28s; opacity: 0; }
-  [data-delay="5"] { animation-delay: .36s; opacity: 0; }
-  .animate-fade-up { animation: fadeUp .5s ease forwards; }
-  @keyframes fadeUp {
-    from { opacity:0; transform:translateY(12px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #000;
+  font-family: 'Syne', sans-serif;
+  color: #e5e5e5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1c1c1c; border-radius: 4px; }
+
+/* Grid bg */
+.grid-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -300% center; }
+  100% { background-position: 300% center; }
+}
+@keyframes lightningX {
+  0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateX(500%) skewX(-20deg); opacity: 0; }
+}
+@keyframes borderPulse {
+  0%,100% { opacity: .08; }
+  50%      { opacity: .28; }
+}
+@keyframes dividerSweep {
+  0%   { left: -40%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: 140%; opacity: 0; }
+}
+
+.fu { opacity: 0; animation: fadeUp .55s ease forwards; }
+.d1 { animation-delay: .06s; }
+.d2 { animation-delay: .15s; }
+.d3 { animation-delay: .24s; }
+.d4 { animation-delay: .33s; }
+.d5 { animation-delay: .42s; }
+
+/* ─── Title shimmer ─── */
+.title-shimmer {
+  background: linear-gradient(90deg,
+    #fff 0%, #fff 35%,
+    #aaa 45%, #fff 55%,
+    #fff 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s linear infinite;
+}
+
+/* ─── Cards ─── */
+.card {
+  background: #080808;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .3s;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.0);
+  pointer-events: none;
+  transition: border-color .3s;
+  animation: borderPulse 3.5s ease-in-out infinite;
+}
+/* Lightning sweep on hover */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 35%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.035), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  pointer-events: none;
+  opacity: 0;
+}
+.card:hover { border-color: rgba(255,255,255,.18); }
+.card:hover::after {
+  animation: lightningX 1s ease forwards;
+}
+
+/* ─── Inputs ─── */
+textarea, input[type=text] {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  line-height: 1.75;
+  caret-color: #fff;
+  background: #040404;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  color: #bbb;
+  width: 100%;
+  padding: 12px 14px;
+  transition: border-color .2s, box-shadow .2s;
+  resize: vertical;
+  outline: none;
+}
+textarea:focus, input[type=text]:focus {
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.03);
+}
+textarea::placeholder, input::placeholder { color: #252525; }
+
+/* ─── Chips ─── */
+.chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.03);
+  color: #666;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  transition: color .15s, border-color .15s, background .15s, transform .15s;
+  display: inline-flex;
+  align-items: center;
+}
+.chip::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -80%;
+  width: 55%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+  transform: skewX(-15deg);
+  opacity: 0;
+}
+.chip:hover {
+  border-color: rgba(255,255,255,.3);
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  transform: translateY(-1px);
+}
+.chip:hover::after { animation: lightningX .55s ease forwards; }
+
+/* ─── Section label ─── */
+.sec-label {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.05);
+}
+
+/* ─── Divider ─── */
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,.05);
+  margin: 14px 0;
+  position: relative;
+  overflow: hidden;
+}
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+  animation: dividerSweep 4s ease-in-out infinite;
+}
+.divider:nth-of-type(2)::after { animation-delay: 1.3s; }
+.divider:nth-of-type(3)::after { animation-delay: 2.6s; }
+
+/* ─── Toggle ─── */
+.toggle-track {
+  width: 36px; height: 20px;
+  border-radius: 10px;
+  background: #0e0e0e;
+  border: 1px solid rgba(255,255,255,.12);
+  position: relative;
+  cursor: pointer;
+  transition: background .25s, border-color .25s;
+  flex-shrink: 0;
+}
+.toggle-track.on { background: #fff; border-color: #fff; }
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #333;
+  transition: left .22s cubic-bezier(.4,0,.2,1), background .22s;
+}
+.toggle-track.on .toggle-thumb { left: 19px; background: #000; }
+
+/* ─── Checkboxes ─── */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.check-row:hover { background: rgba(255,255,255,.025); }
+.check-row input[type=checkbox] {
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+  position: relative;
+  transition: background .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.check-row input[type=checkbox]:checked { background: #fff; border-color: #fff; }
+.check-row input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 4px; height: 8px;
+  border: solid #000;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.check-row span {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #fff;
+  cursor: pointer;
+  transition: color .15s;
+}
+.check-row:hover span { color: #888; }
+
+/* ─── Process button ─── */
+.process-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: letter-spacing .25s ease, transform .15s;
+}
+.process-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.12), transparent);
+  transform: skewX(-15deg);
+  animation: lightningX 3s ease-in-out infinite;
+  animation-delay: .8s;
+}
+.process-btn:hover { letter-spacing: 4px; transform: translateY(-1px); }
+.process-btn:active { transform: scale(.99); }
+
+/* ─── Copy button ─── */
+.copy-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.03);
+  color: #444;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.copy-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -80%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  transform: skewX(-15deg);
+  opacity: 0;
+}
+.copy-btn:hover { border-color: rgba(255,255,255,.22); color: #bbb; background: rgba(255,255,255,.06); }
+.copy-btn:hover::after { animation: lightningX .5s ease forwards; }
+
+/* ─── Badge ─── */
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.02);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #80fc5d;
+  box-shadow: 0 0 8px rgba(255,255,255,.08);
+  animation: borderPulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: #0e0e0e;
+  border: 1px solid rgba(255,255,255,.12);
+  color: #aaa;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all .35s cubic-bezier(.68,-.55,.27,1.55);
+  z-index: 999;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─── Field label ─── */
+.flabel {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: #a8a5a5;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 7px;
+}
 </style>
 </head>
 
-<body class="min-h-screen text-zinc-200 overflow-x-hidden">
+<body>
+<div class="grid-bg"></div>
 
-<!-- Background -->
-<div class="fixed inset-0 pointer-events-none z-0">
-  <div class="absolute inset-0" style="background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:48px 48px"></div>
-  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10" style="background:radial-gradient(ellipse,#3f3f46,transparent 70%)"></div>
-</div>
+<!-- Ambient glow top -->
+<div style="position:fixed;top:-80px;left:50%;transform:translateX(-50%);width:800px;height:280px;background:radial-gradient(ellipse,rgba(255,255,255,.035),transparent 70%);pointer-events:none;z-index:0"></div>
 
-<div class="relative z-10 max-w-5xl mx-auto px-5 py-10">
+<div style="position:relative;z-index:1;max-width:960px;margin:0 auto;padding:44px 20px">
 
   <!-- Header -->
-  <header class="text-center mb-10 animate-fade-up" data-delay="1">
-    <div class="inline-flex items-center gap-3 mb-5 px-4 py-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 text-zinc-500 text-xs font-mono tracking-widest uppercase">
-      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-      Email utility
+  <header style="text-align:center;margin-bottom:44px" class="fu d1">
+    <div style="margin-bottom:18px">
+      <div class="badge"><div class="badge-dot"></div>Email utility</div>
     </div>
-    <h1 class="text-6xl font-display font-800 tracking-tight text-white mb-3" style="font-weight:800;letter-spacing:-2px">WMN2</h1>
-    <p class="text-zinc-500 text-sm tracking-wide">Clean and modify email headers with precision</p>
+    <h1 class="title-shimmer" style="font-size:72px;font-weight:800;letter-spacing:-4px;line-height:1;margin-bottom:12px">WMN2</h1>
+    <p style="color:#2e2e2e;font-size:12px;letter-spacing:2px;font-family:'DM Mono',monospace;text-transform:uppercase">Clean and modify email headers with precision</p>
   </header>
 
   <!-- Main grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
 
     <!-- Input -->
-    <div class="card-glass rounded-2xl p-5 animate-fade-up" data-delay="2">
-      <div class="flex items-center gap-2 mb-4">
-        <div class="w-5 h-5 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-          <svg width="10" height="10" fill="none" viewBox="0 0 12 12"><path d="M2 2h8M2 6h8M2 10h5" stroke="#71717a" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <span class="text-xs font-mono uppercase tracking-widest text-zinc-500">Input headers</span>
-      </div>
-      <textarea id="inputText"
-        class="w-full h-56 bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 text-zinc-300 resize-none placeholder-zinc-700 leading-relaxed"
-        placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
+    <div class="card fu d2" style="padding:22px">
+      <div class="sec-label">Input headers</div>
+      <textarea id="inputText" style="height:228px" placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
 Date: Wed, 3 Sep 2025 08:25:46 -0700 (PDT)
 To: someone@example.com
 Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     </div>
 
     <!-- Options -->
-    <div class="card-glass rounded-2xl p-5 animate-fade-up overflow-y-auto max-h-[520px]" data-delay="3">
-      <div class="flex items-center gap-2 mb-4">
-        <div class="w-5 h-5 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-          <svg width="10" height="10" fill="none" viewBox="0 0 12 12"><circle cx="6" cy="6" r="2" stroke="#71717a" stroke-width="1.5"/><path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="#71717a" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <span class="text-xs font-mono uppercase tracking-widest text-zinc-500">Options</span>
-      </div>
+    <div class="card fu d3" style="padding:22px;overflow-y:auto;max-height:580px">
+      <div class="sec-label">Processing options</div>
 
       <!-- Domain -->
-      <div class="mb-4">
-        <label class="block text-[10px] font-mono uppercase tracking-widest text-zinc-50 mb-2">Domain replacement</label>
-        <input type="text" id="domainReplace" placeholder="e.g. example.com or [P_RPATH]"
-          class="w-full bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 placeholder-zinc-700">
-        <div class="flex flex-wrap gap-1.5 mt-2">
-          <button class="chip px-2.5 py-1 rounded-full bg-blue-950/60 text-blue-400 border border-blue-900/60 hover:bg-blue-900/40" data-target="domainReplace" data-value="[P_RPATH]">[P_RPATH]</button>
-          <button class="chip px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-900/60 hover:bg-emerald-900/40" data-target="domainReplace" data-value="[RDNS]">[RDNS]</button>
+      <div style="margin-bottom:14px">
+        <div class="flabel">Domain replacement</div>
+        <input type="text" id="domainReplace" placeholder="e.g. example.com or [P_RPATH]">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
+          <button class="chip" data-target="domainReplace" data-value="[P_RPATH]">[P_RPATH]</button>
+          <button class="chip" data-target="domainReplace" data-value="[RDNS]">[RDNS]</button>
+          <button class="chip" data-target="domainReplace" data-value="[RP]">[RP]</button>
         </div>
-        <p class="text-[10px] text-zinc-700 mt-1.5 font-mono">Leave empty to strip domain entirely</p>
+        <div style="font-size:10px;color:#fff;font-family:'DM Mono',monospace;margin-top:6px">Leave empty to strip domain entirely</div>
       </div>
 
-      <div class="glow-line h-px my-4"></div>
+      <div class="divider"></div>
 
       <!-- Message ID -->
-      <div class="mb-4">
-        <label class="block text-[10px] font-mono uppercase tracking-widest text-zinc-50 mb-2">Message-ID tag</label>
-        <input type="text" id="msgTag" value="[EID]"
-          class="w-full bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 placeholder-zinc-700">
-        <div class="flex flex-wrap gap-1.5 mt-2">
-          <button class="chip px-2.5 py-1 rounded-full bg-blue-950/60 text-blue-400 border border-blue-900/60 hover:bg-blue-900/40" data-target="msgTag" data-value="[EID]">[EID]</button>
-          <button class="chip px-2.5 py-1 rounded-full bg-zinc-900 text-zinc-500 border border-zinc-800 hover:bg-zinc-800" data-target="msgTag" data-value="">(none)</button>
+      <div style="margin-bottom:14px">
+        <div class="flabel">Message-ID tag</div>
+        <input type="text" id="msgTag" value="[EID]">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
+          <button class="chip" data-target="msgTag" data-value="[EID]">[EID]</button>
+          <button class="chip" data-target="msgTag" data-value="">(none)</button>
         </div>
       </div>
 
-      <div class="glow-line h-px my-4"></div>
+      <div class="divider"></div>
 
-      <!-- Sender header -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between mb-3">
-          <label class="text-[10px] font-mono uppercase tracking-widest text-zinc-50">Sender header</label>
-          <div class="flex items-center gap-2">
-            <span id="senderLbl" class="text-[10px] font-mono text-zinc-700">Off</span>
-            <div id="senderToggle" class="toggle-track relative w-9 h-5 bg-zinc-900 border border-zinc-700 rounded-full cursor-pointer">
-              <div class="toggle-thumb absolute top-[3px] left-[3px] w-[13px] h-[13px] bg-zinc-600 rounded-full"></div>
-            </div>
+      <!-- Sender -->
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="flabel" style="margin-bottom:0">Sender header</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="senderLbl" style="font-size:10px;font-family:'DM Mono',monospace;color:#222">Off</span>
+            <div class="toggle-track" id="senderToggle"><div class="toggle-thumb"></div></div>
           </div>
         </div>
-        <div id="senderFields" class="transition-opacity duration-200 opacity-30 pointer-events-none">
-          <div class="flex items-center gap-2 mb-2">
-            <input type="text" id="senderUser" value="adobe"
-              class="w-24 bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 placeholder-zinc-700 flex-shrink-0">
-            <span class="text-zinc-50 font-mono font-medium">@</span>
-            <input type="text" id="senderDomain" value="[RDNS]"
-              class="flex-1 bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 placeholder-zinc-700">
+        <div id="senderFields" style="opacity:.18;pointer-events:none;transition:opacity .2s">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <input type="text" id="senderUser" value="adobe" style="width:88px;flex-shrink:0">
+            <span style="color:#252525;font-family:'DM Mono',monospace;font-size:14px">@</span>
+            <input type="text" id="senderDomain" value="[RDNS]" style="flex:1">
           </div>
-          <div class="flex flex-wrap gap-1.5">
-            <button class="chip px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-900/60 hover:bg-emerald-900/40" data-target="senderDomain" data-value="[RDNS]">[RDNS]</button>
-            <button class="chip px-2.5 py-1 rounded-full bg-blue-950/60 text-blue-400 border border-blue-900/60 hover:bg-blue-900/40" data-target="senderDomain" data-value="[P_RPATH]">[P_RPATH]</button>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <button class="chip" data-target="senderDomain" data-value="[RDNS]">[RDNS]</button>
+            <button class="chip" data-target="senderDomain" data-value="[P_RPATH]">[P_RPATH]</button>
+            <button class="chip" data-target="senderDomain" data-value="[RP]">[RP]</button>
           </div>
-          <p id="senderPreview" class="text-[11px] font-mono text-zinc-50 mt-2 min-h-[16px]"></p>
+          <div id="senderPreview" style="font-size:11px;font-family:'DM Mono',monospace;color:#3a3a3a;margin-top:8px;min-height:16px"></div>
         </div>
       </div>
 
-      <div class="glow-line h-px my-4"></div>
+      <div class="divider"></div>
 
       <!-- Checkboxes -->
-      <div class="grid grid-cols-2 gap-1 mb-4">
-        <label class="flex items-center gap-2.5 cursor-pointer group px-2 py-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
-          <input type="checkbox" id="replaceDate" checked class="w-3.5 h-3.5 accent-zinc-400">
-          <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono transition-colors">Date → [DATE]</span>
-        </label>
-        <label class="flex items-center gap-2.5 cursor-pointer group px-2 py-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
-          <input type="checkbox" id="replaceTo" checked class="w-3.5 h-3.5 accent-zinc-400">
-          <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono transition-colors">To → [*to]</span>
-        </label>
-        <label class="flex items-center gap-2.5 cursor-pointer group px-2 py-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
-          <input type="checkbox" id="keepReceived" checked class="w-3.5 h-3.5 accent-zinc-400">
-          <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono transition-colors">Keep Received:</span>
-        </label>
-        <label class="flex items-center gap-2.5 cursor-pointer group px-2 py-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
-          <input type="checkbox" id="keepReplyTo" checked class="w-3.5 h-3.5 accent-zinc-400">
-          <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono transition-colors">Keep Reply-To:</span>
-        </label>
-        <label class="flex items-center gap-2.5 cursor-pointer group col-span-2 px-2 py-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
-          <input type="checkbox" id="addCc" class="w-3.5 h-3.5 accent-zinc-400">
-          <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono transition-colors">Add Cc: [*to] if missing</span>
-        </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:4px">
+        <label class="check-row"><input type="checkbox" id="replaceDate" checked><span>Date → [DATE]</span></label>
+        <label class="check-row"><input type="checkbox" id="replaceTo" checked><span>To → [*to]</span></label>
+        <label class="check-row"><input type="checkbox" id="keepReceived" checked><span>Keep Received:</span></label>
+        <label class="check-row"><input type="checkbox" id="keepReplyTo" checked><span>Keep Reply-To:</span></label>
+        <label class="check-row" style="grid-column:span 2"><input type="checkbox" id="addCc"><span>Add Cc: [*to] if missing</span></label>
       </div>
 
-      <button id="processBtn"
-        class="process-btn w-full py-3 rounded-xl border border-zinc-700 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-200 text-sm font-display font-semibold uppercase tracking-widest flex items-center justify-center gap-3">
-        <svg width="14" height="14" fill="none" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Process
-      </button>
+      <button class="process-btn" id="processBtn">Process Headers →</button>
     </div>
   </div>
 
   <!-- Output -->
-  <div class="card-glass rounded-2xl p-5 mb-4 animate-fade-up" data-delay="4">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-          <svg width="10" height="10" fill="none" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" rx="2" stroke="#71717a" stroke-width="1.5"/><path d="M4 6h4M4 8h2" stroke="#71717a" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <span class="text-xs font-mono uppercase tracking-widest text-zinc-500">Processed headers</span>
-      </div>
-      <button id="copyBtn"
-        class="flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 bg-zinc-900/60 hover:bg-zinc-800/60 px-3 py-1.5 rounded-lg transition-all duration-200">
-        <svg width="12" height="12" fill="none" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/></svg>
+  <div class="card fu d4" style="padding:22px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="sec-label" style="margin-bottom:0;flex:1">Processed headers</div>
+      <button class="copy-btn" id="copyBtn">
+        <svg width="11" height="11" fill="none" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/></svg>
         Copy
       </button>
     </div>
-    <textarea id="outputText" readonly
-      class="w-full h-44 bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 text-zinc-500 resize-none leading-relaxed"
-      placeholder="Processed output will appear here..."></textarea>
+    <textarea id="outputText" readonly style="height:160px;color:#333;cursor:default" placeholder="Output appears here..."></textarea>
   </div>
 
   <!-- Info -->
-  <div class="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-5 animate-fade-up" data-delay="5">
-    <h3 class="text-[10px] font-mono uppercase tracking-widest text-zinc-50 mb-3">How it works</h3>
-    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Replaces From domain with token or custom domain</li>
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Tags Message-ID (e.g. <code class="text-zinc-500 bg-zinc-800/60 px-1 py-0.5 rounded">[EID]</code>)</li>
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Injects <code class="text-zinc-500 bg-zinc-800/60 px-1 py-0.5 rounded">Sender: &lt;user@[RDNS]&gt;</code></li>
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Replaces Date and To with placeholders</li>
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Removes ARC, DKIM, SPF, Delivered-To headers</li>
-      <li class="flex items-start gap-2 text-xs text-zinc-600 font-mono"><span class="text-zinc-700 mt-0.5">→</span>Strips Original Message / d'origine blocks</li>
-    </ul>
+  <div class="card fu d5" style="padding:22px">
+    <div class="sec-label">How it works</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 32px">
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Replaces From domain with token or domain</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Tags Message-ID with [EID] or custom tag</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Injects Sender: &lt;user@[RDNS]&gt; after From</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Replaces Date and To with placeholders</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Removes ARC, DKIM, SPF, Delivered-To</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:#2a2a2a;display:flex;gap:8px"><span style="color:#1a1a1a">→</span>Strips Original Message blocks</div>
+    </div>
   </div>
 
-  <footer class="text-center mt-8 text-zinc-800 text-[11px] font-mono tracking-widest uppercase animate-fade-up" data-delay="5">
+  <footer style="text-align:center;margin-top:32px;font-family:'DM Mono',monospace;font-size:10px;color:#181818;letter-spacing:2px;text-transform:uppercase" class="fu d5">
     mohamed hichy — WMN2 © 2025
   </footer>
 </div>
 
 <!-- Toast -->
-<div id="toast"
-  class="fixed bottom-5 right-5 flex items-center gap-2 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-mono shadow-2xl transition-all duration-300 translate-y-16 opacity-0 z-50">
-  <svg width="12" height="12" fill="none" viewBox="0 0 16 16"><path d="M3 8l4 4 6-6" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<div class="toast" id="toast">
+  <svg width="11" height="11" fill="none" viewBox="0 0 16 16"><path d="M3 8l4 4 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   Copied to clipboard
 </div>
 
 <script>
 let senderOn = false;
 
-// Chips
 document.querySelectorAll('button[data-target]').forEach(btn => {
   btn.addEventListener('click', () => {
     const el = document.getElementById(btn.dataset.target);
@@ -272,31 +525,21 @@ document.querySelectorAll('button[data-target]').forEach(btn => {
   });
 });
 
-// Sender toggle
 function setSender(on) {
   senderOn = on;
   const track = document.getElementById('senderToggle');
-  const thumb = track.querySelector('.toggle-thumb');
   const fields = document.getElementById('senderFields');
   const lbl = document.getElementById('senderLbl');
   if (on) {
-    track.style.background = '#27272a';
-    track.style.borderColor = '#52525b';
-    thumb.style.left = '19px';
-    thumb.style.background = '#e4e4e7';
+    track.classList.add('on');
     fields.style.opacity = '1';
     fields.style.pointerEvents = 'auto';
-    lbl.textContent = 'On';
-    lbl.style.color = '#a1a1aa';
+    lbl.textContent = 'On'; lbl.style.color = '#666';
   } else {
-    track.style.background = '';
-    track.style.borderColor = '';
-    thumb.style.left = '3px';
-    thumb.style.background = '#52525b';
-    fields.style.opacity = '0.3';
+    track.classList.remove('on');
+    fields.style.opacity = '0.18';
     fields.style.pointerEvents = 'none';
-    lbl.textContent = 'Off';
-    lbl.style.color = '#3f3f46';
+    lbl.textContent = 'Off'; lbl.style.color = '#222';
   }
   updatePreview();
 }
@@ -311,7 +554,6 @@ function updatePreview() {
 document.getElementById('senderUser').addEventListener('input', updatePreview);
 document.getElementById('senderDomain').addEventListener('input', updatePreview);
 
-// Processing
 function replaceFrom(t, rep) {
   const r = rep.trim();
   let o = t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (m, name, user) =>
@@ -330,9 +572,9 @@ function stripBlocks(t) {
 function stripHeaders(t) {
   const keepRcv = document.getElementById('keepReceived').checked;
   const keepRpl = document.getElementById('keepReplyTo').checked;
-  const del = ['ARC-Authentication-Results:', 'ARC-Message-Signature:', 'Delivered-To:', 'DKIM-Signature:',
-    'Authentication-Results:', 'Received-SPF:', 'Return-Path:', 'X-Received:',
-    'X-Google-Smtp-Source:', 'ARC-Seal:', 'Received:', 'Reply-To:', 'sender'];
+  const del = ['ARC-Authentication-Results:','ARC-Message-Signature:','Delivered-To:','DKIM-Signature:',
+    'Authentication-Results:','Received-SPF:','Return-Path:','X-Received:',
+    'X-Google-Smtp-Source:','ARC-Seal:','Received:','Reply-To:','sender'];
   const lines = t.split(/\r?\n/); const out = []; let skip = false;
   for (const line of lines) {
     if (del.some(h => line.toLowerCase().startsWith(h.toLowerCase()))) {
@@ -386,12 +628,8 @@ document.getElementById('copyBtn').addEventListener('click', () => {
   o.select();
   document.execCommand('copy');
   const toast = document.getElementById('toast');
-  toast.classList.remove('translate-y-16', 'opacity-0');
-  toast.classList.add('translate-y-0', 'opacity-100');
-  setTimeout(() => {
-    toast.classList.add('translate-y-16', 'opacity-0');
-    toast.classList.remove('translate-y-0', 'opacity-100');
-  }, 2200);
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
 });
 </script>
 </body>
