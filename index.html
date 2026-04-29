@@ -1,834 +1,469 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WMN2 — Email Header Cleaner</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        fontFamily: {
-          syne: ['Syne', 'sans-serif'],
-          mono: ['"DM Mono"', 'monospace'],
-        },
-        colors: {
-          surface: {
-            dark: '#0a0a0a',
-            card: '#111111',
-            input: '#0d0d0d',
-          },
-          border: {
-            dark: 'rgba(255,255,255,0.08)',
-            hover: 'rgba(255,255,255,0.18)',
-          }
-        },
-        animation: {
-          'fade-up': 'fadeUp 0.55s ease forwards',
-          'shimmer': 'shimmer 5s linear infinite',
-          'lightning': 'lightningX 1s ease forwards',
-          'border-pulse': 'borderPulse 3.5s ease-in-out infinite',
-          'divider-sweep': 'dividerSweep 4s ease-in-out infinite',
-          'btn-lightning': 'lightningX 3s ease-in-out infinite 0.8s',
-        },
-        keyframes: {
-          fadeUp: {
-            from: { opacity: '0', transform: 'translateY(16px)' },
-            to: { opacity: '1', transform: 'translateY(0)' },
-          },
-          shimmer: {
-            '0%': { backgroundPosition: '-300% center' },
-            '100%': { backgroundPosition: '300% center' },
-          },
-          lightningX: {
-            '0%': { transform: 'translateX(-120%) skewX(-20deg)', opacity: '0' },
-            '8%': { opacity: '1' },
-            '92%': { opacity: '1' },
-            '100%': { transform: 'translateX(500%) skewX(-20deg)', opacity: '0' },
-          },
-          borderPulse: {
-            '0%,100%': { opacity: '0.08' },
-            '50%': { opacity: '0.28' },
-          },
-          dividerSweep: {
-            '0%': { left: '-40%', opacity: '0' },
-            '10%': { opacity: '1' },
-            '90%': { opacity: '1' },
-            '100%': { left: '140%', opacity: '0' },
-          },
-        }
-      }
-    }
-  }
-</script>
+<!-- Oil Painting Background Canvas -->
+<canvas id="oilCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.18"></canvas>
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body { font-family: 'Syne', sans-serif; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
-  .dark ::-webkit-scrollbar-thumb { background: #1c1c1c; }
-
-  /* Animations */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes shimmer {
-    0%   { background-position: -300% center; }
-    100% { background-position: 300% center; }
-  }
-  @keyframes lightningX {
-    0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
-    8%   { opacity: 1; }
-    92%  { opacity: 1; }
-    100% { transform: translateX(500%) skewX(-20deg); opacity: 0; }
-  }
-  @keyframes borderPulse {
-    0%,100% { opacity: .08; }
-    50%      { opacity: .28; }
-  }
-  @keyframes dividerSweep {
-    0%   { left: -40%; opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { left: 140%; opacity: 0; }
-  }
-
-  /* Staggered fade-up */
-  .fu { opacity: 0; animation: fadeUp .55s ease forwards; }
-  .d1 { animation-delay: .06s; }
-  .d2 { animation-delay: .15s; }
-  .d3 { animation-delay: .24s; }
-  .d4 { animation-delay: .33s; }
-  .d5 { animation-delay: .42s; }
-
-  /* Title shimmer — dark */
-  .title-shimmer-dark {
-    background: linear-gradient(90deg, #fff 0%, #fff 35%, #aaa 45%, #fff 55%, #fff 100%);
-    background-size: 300% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: shimmer 5s linear infinite;
-  }
-  /* Title shimmer — light */
-  .title-shimmer-light {
-    background: linear-gradient(90deg, #000 0%, #000 35%, #555 45%, #000 55%, #000 100%);
-    background-size: 300% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: shimmer 5s linear infinite;
-  }
-
-  /* Card lightning sweep */
-  .card-wrap::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 35%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.035), transparent);
-    transform: translateX(-120%) skewX(-20deg);
-    pointer-events: none;
-    opacity: 0;
-  }
-  .card-wrap:hover::after {
-    animation: lightningX 1s ease forwards;
-  }
-
-  /* Divider sweep */
-  .divider-line {
-    height: 1px;
-    position: relative;
-    overflow: hidden;
-    margin: 14px 0;
-  }
-  .divider-line::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -40%;
-    width: 40%; height: 100%;
-    animation: dividerSweep 4s ease-in-out infinite;
-  }
-
-  /* Chip lightning */
-  .chip-btn::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -80%;
-    width: 55%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
-    transform: skewX(-15deg);
-    opacity: 0;
-  }
-  .chip-btn:hover::after { animation: lightningX .55s ease forwards; }
-
-  /* Process btn lightning */
-  .process-btn::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -60%;
-    width: 40%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0,0,0,.12), transparent);
-    transform: skewX(-15deg);
-    animation: lightningX 3s ease-in-out infinite;
-    animation-delay: .8s;
-  }
-  .process-btn:hover { letter-spacing: 4px; transform: translateY(-1px); }
-  .process-btn:active { transform: scale(.99); }
-
-  /* Copy btn lightning */
-  .copy-btn::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -80%;
-    width: 50%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
-    transform: skewX(-15deg);
-    opacity: 0;
-  }
-  .copy-btn:hover::after { animation: lightningX .5s ease forwards; }
-
-  /* Badge dot pulse */
-  .badge-dot {
-    animation: borderPulse 2.5s ease-in-out infinite;
-  }
-
-  /* Toggle thumb transition */
-  .toggle-thumb {
-    transition: left .22s cubic-bezier(.4,0,.2,1), background .22s;
-  }
-
-  /* Smooth theme transition */
-  body, .card-wrap, textarea, input[type=text], .chip-btn, .copy-btn, .process-btn {
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-  }
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f0e8;
+  --page:#ede8df;
+  --card:#faf7f2;
+  --card2:#f2ede4;
+  --input:#eee8dd;
+  --border:#d9d0c0;
+  --border-h:#b8ad98;
+  --text:#2c2416;
+  --text-2:#5a4f3c;
+  --text-3:#8a7d69;
+  --text-4:#b0a490;
+  --accent:#3d6b4f;
+  --accent-bg:#e4f0e8;
+  --accent-text:#2a5038;
+  --mono:'DM Mono',monospace;
+  --syne:'Syne',sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0f1410;
+  --page:#141a15;
+  --card:#1a221b;
+  --card2:#1f2920;
+  --input:#182019;
+  --border:#2a3a2c;
+  --border-h:#3d5a3f;
+  --text:#d6e8d8;
+  --text-2:#9bbf9e;
+  --text-3:#6a9470;
+  --text-4:#4a6b4e;
+  --accent:#4d8b63;
+  --accent-bg:#1a2e1e;
+  --accent-text:#6db87f;
+}
+body{font-family:var(--syne);background:var(--bg);color:var(--text);min-height:100vh;transition:background .35s,color .35s}
+.theme-btn{position:fixed;top:18px;right:18px;z-index:999;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent);transform:rotate(22deg);box-shadow:0 4px 16px rgba(61,107,79,.18)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-300% center}100%{background-position:300% center}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes sweep{0%{left:-40%;opacity:0}10%{opacity:.7}90%{opacity:.7}100%{left:140%;opacity:0}}
+.fu{opacity:0;animation:fadeUp .5s ease forwards}
+.d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.2s}.d4{animation-delay:.28s}.d5{animation-delay:.36s}
+.wrap{max-width:900px;margin:0 auto;padding:40px 20px 60px;position:relative;z-index:1}
+.tg-badge{position:fixed;bottom:22px;left:22px;z-index:999;display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:100px;background:var(--card);border:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text-2);text-decoration:none;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.tg-badge:hover{border-color:var(--accent);color:var(--accent-text);background:var(--accent-bg);transform:translateY(-2px);box-shadow:0 4px 18px rgba(61,107,79,.15)}
+.hdr{text-align:center;margin-bottom:36px}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:100px;border:1px solid var(--border);background:var(--card);font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:16px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2.5s ease-in-out infinite;flex-shrink:0}
+h1{font-family:var(--syne);font-weight:800;font-size:clamp(48px,9vw,76px);letter-spacing:-4px;line-height:1;margin-bottom:10px;background:linear-gradient(90deg,var(--text) 0%,var(--text) 35%,var(--text-3) 46%,var(--text) 56%,var(--text) 100%);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 6s linear infinite}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-4)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;transition:border-color .2s}
+.card:hover{border-color:var(--border-h)}
+.sec-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-2);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+textarea,input[type=text]{width:100%;background:var(--input);border:1px solid var(--border);border-radius:10px;font-family:var(--mono);font-size:12px;line-height:1.8;color:var(--text-2);outline:none;transition:border-color .2s,background .2s;resize:vertical;padding:13px}
+textarea::placeholder,input::placeholder{color:var(--text-4)}
+textarea:focus,input:focus{border-color:var(--accent);background:var(--card)}
+#inputText{height:218px}
+#outputText{height:155px;cursor:default;color:var(--text-4)}
+#outputText.has-content{color:var(--text-2)}
+.flabel{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 11px;border-radius:100px;border:1px solid var(--border);background:var(--card2);color:var(--text-3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:var(--accent);color:var(--accent-text);background:var(--accent-bg)}
+.hint{font-family:var(--mono);font-size:10px;color:var(--text-4);margin-top:5px}
+.div{height:1px;background:var(--border);position:relative;overflow:hidden;margin:14px 0}
+.div::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(61,107,79,.35),transparent);animation:sweep 5s ease-in-out infinite}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.toggle-wrap{display:flex;align-items:center;gap:8px}
+.toggle-lbl{font-family:var(--mono);font-size:10px;color:var(--text-4)}
+.sw{width:36px;height:20px;border-radius:100px;border:1px solid var(--border);background:var(--input);cursor:pointer;position:relative;transition:background .22s,border-color .22s;flex-shrink:0}
+.sw.on{background:var(--accent);border-color:var(--accent)}
+.sw-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--border-h);transition:left .22s,background .22s}
+.sw.on .sw-thumb{left:19px;background:#fff}
+.sender-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sender-row input{flex:1}
+.sender-row input.u{flex:0 0 80px}
+.at-sym{font-family:var(--mono);font-size:13px;color:var(--text-4)}
+.sender-preview{font-family:var(--mono);font-size:11px;color:var(--accent-text);min-height:16px;margin-top:4px}
+.cb-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.cb-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .15s}
+.cb-row:hover{background:var(--card2)}
+.cb-row.span2{grid-column:span 2}
+input[type=checkbox]{width:14px;height:14px;border-radius:4px;border:1px solid var(--border-h);background:var(--input);appearance:none;cursor:pointer;position:relative;flex-shrink:0;transition:all .15s}
+input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+input[type=checkbox]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:1.5px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+.cb-lbl{font-family:var(--mono);font-size:11px;color:var(--text-2)}
+.proc-btn{width:100%;margin-top:16px;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-family:var(--syne);font-weight:700;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;transition:letter-spacing .2s,transform .1s,background .2s}
+.proc-btn:hover{letter-spacing:4px;background:var(--accent-text)}
+.proc-btn:active{transform:scale(.99)}
+.out-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.out-hdr-left{display:flex;align-items:center;gap:10px;flex:1}
+.out-hdr-left::after{content:'';flex:1;height:1px;background:var(--border)}
+.copy-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text-3);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;margin-left:16px;flex-shrink:0}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent-text);background:var(--accent-bg)}
+.copy-btn.copied{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-text)}
+.lines-badge{font-family:var(--mono);font-size:10px;color:var(--text-4);margin-left:8px}
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+@media(max-width:500px){.how-grid{grid-template-columns:1fr}}
+.how-item{font-family:var(--mono);font-size:11px;color:var(--text-3);display:flex;gap:8px;padding:3px 0}
+.how-item span{color:var(--accent)}
+footer{text-align:center;margin-top:28px;font-family:var(--mono);font-size:10px;color:var(--text-4);letter-spacing:2px;text-transform:uppercase}
+.toast-wrap{background:var(--card);border:1px solid var(--border-h);border-radius:10px;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--accent-text);transform:translateY(60px);opacity:0;transition:all .35s cubic-bezier(.68,-.55,.27,1.55);pointer-events:none}
+.toast-wrap.show{transform:translateY(0);opacity:1}
+#toastOuter{position:fixed;bottom:20px;right:20px;z-index:999}
 </style>
-</head>
 
-<body class="dark:bg-[#0a0a0a] bg-gray-50 dark:text-white text-gray-900 min-h-screen overflow-x-hidden">
+<div class="wrap">
+  <header class="hdr fu d1">
+    <div class="badge"><span class="dot"></span>Email utility</div>
+    <h1>WMN2</h1>
+    <p class="sub">Clean and modify email headers with precision</p>
+  </header>
 
-  <!-- Grid bg (dark only) -->
-  <div class="fixed inset-0 pointer-events-none z-0 dark:opacity-100 opacity-30"
-       style="background-image: linear-gradient(rgba(0,0,0,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.06) 1px, transparent 1px); background-size: 44px 44px;"></div>
-
-  <!-- Ambient glow (dark only) -->
-  <div class="fixed pointer-events-none z-0 dark:opacity-100 opacity-0"
-       style="top:-80px;left:50%;transform:translateX(-50%);width:800px;height:280px;background:radial-gradient(ellipse,rgba(255,255,255,.035),transparent 70%)"></div>
-
-  <div class="relative z-10 max-w-[960px] mx-auto px-5 py-11">
-
-    <!-- Header -->
-    <header class="text-center mb-11 fu d1">
-      <div class="mb-[18px]">
-        <!-- Badge -->
-        <span class="inline-flex items-center gap-2 px-[14px] py-[5px] rounded-full border
-                     dark:border-white/10 border-gray-300
-                     dark:bg-white/[.02] bg-white
-                     font-mono text-[10px] tracking-[2px] uppercase
-                     dark:text-white text-gray-700">
-          <span class="badge-dot w-[5px] h-[5px] rounded-full bg-[#80fc5d] shadow-sm inline-block"></span>
-          Email utility
-        </span>
-      </div>
-      <h1 class="font-syne font-extrabold text-[72px] tracking-[-4px] leading-none mb-3
-                 dark:title-shimmer-dark title-shimmer-light"
-          id="titleEl">WMN2</h1>
-      <p class="font-mono text-[12px] tracking-[2px] uppercase
-                dark:text-white/20 text-gray-400">
-        Clean and modify email headers with precision
-      </p>
-
-      <!-- Theme toggle -->
-      <div class="flex justify-center mt-5">
-        <button id="themeToggle"
-                class="flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-[11px]
-                       dark:border-white/10 border-gray-300
-                       dark:bg-white/[.03] bg-white
-                       dark:text-white/50 text-gray-500
-                       hover:dark:border-white/20 hover:border-gray-400
-                       transition-all duration-200 cursor-pointer">
-          <span id="themeIcon" class="text-[13px]">🌙</span>
-          <span id="themeLabel">Light mode</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-
-      <!-- Input -->
-      <div class="card-wrap relative overflow-hidden rounded-[18px] border
-                  dark:bg-[#111111] bg-white
-                  dark:border-white/[.08] border-gray-200
-                  hover:dark:border-white/[.18] hover:border-gray-300
-                  p-[22px] fu d2 transition-colors duration-300">
-        <!-- Section label -->
-        <div class="flex items-center gap-[10px] mb-[14px]">
-          <span class="font-mono text-[10px] uppercase tracking-[2px] dark:text-white text-gray-900">Input headers</span>
-          <div class="flex-1 h-px dark:bg-white/[.05] bg-gray-200"></div>
-        </div>
-        <textarea id="inputText"
-                  class="w-full h-[228px] p-5 font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none resize-y
-                         dark:bg-[#0d0d0d] bg-gray-50
-                         dark:border dark:border-white/[.07] border border-gray-200
-                         dark:text-white/70 text-gray-700
-                         dark:placeholder-white/10 placeholder-gray-300
-                         focus:dark:border-white/[.22] focus:border-gray-400
-                         focus:dark:shadow-[0_0_0_3px_rgba(255,255,255,.03)] focus:shadow-[0_0_0_3px_rgba(0,0,0,.04)]
-                         transition-all duration-200 caret-current"
-                  placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
+  <div class="grid">
+    <div class="card fu d2">
+      <div class="sec-label">Input headers</div>
+      <textarea id="inputText" placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
 Date: Wed, 3 Sep 2025 08:25:46 -0700 (PDT)
 To: someone@example.com
 Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
-      </div>
-
-      <!-- Options -->
-      <div class="card-wrap relative overflow-hidden rounded-[18px] border
-                  dark:bg-[#111111] bg-white
-                  dark:border-white/[.08] border-gray-200
-                  hover:dark:border-white/[.18] hover:border-gray-300
-                  p-[22px] overflow-y-auto max-h-[580px] fu d3 transition-colors duration-300">
-        <!-- Section label -->
-        <div class="flex items-center gap-[10px] mb-[14px]">
-          <span class="font-mono text-[10px] uppercase tracking-[2px] dark:text-white text-gray-900">Processing options</span>
-          <div class="flex-1 h-px dark:bg-white/[.05] bg-gray-200"></div>
-        </div>
-
-        <!-- Domain replacement -->
-        <div class="mb-[14px]">
-          <div class="font-mono text-[10px] uppercase tracking-[1.5px] dark:text-white/60 text-gray-500 mb-[7px]">
-            Domain replacement
-          </div>
-          <input type="text" id="domainReplace"
-                 placeholder="e.g. example.com or [P_RPATH]"
-                 class="w-full px-[14px] py-[10px] font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none
-                        dark:bg-[#0d0d0d] bg-gray-50
-                        dark:border dark:border-white/[.07] border border-gray-200
-                        dark:text-white/70 text-gray-700
-                        dark:placeholder-white/10 placeholder-gray-300
-                        focus:dark:border-white/[.22] focus:border-gray-400
-                        transition-all duration-200">
-          <div class="flex flex-wrap gap-[6px] mt-[9px]">
-            <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                           border dark:border-white/10 border-gray-300
-                           dark:bg-white/[.03] bg-gray-50
-                           dark:text-white/40 text-gray-500
-                           dark:hover:border-white/30 hover:border-gray-400
-                           dark:hover:text-white hover:text-gray-900
-                           dark:hover:bg-white/[.07] hover:bg-gray-100
-                           hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                    data-target="domainReplace" data-value="[P_RPATH]">[P_RPATH]</button>
-            <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                           border dark:border-white/10 border-gray-300
-                           dark:bg-white/[.03] bg-gray-50
-                           dark:text-white/40 text-gray-500
-                           dark:hover:border-white/30 hover:border-gray-400
-                           dark:hover:text-white hover:text-gray-900
-                           dark:hover:bg-white/[.07] hover:bg-gray-100
-                           hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                    data-target="domainReplace" data-value="[RDNS]">[RDNS]</button>
-            <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                           border dark:border-white/10 border-gray-300
-                           dark:bg-white/[.03] bg-gray-50
-                           dark:text-white/40 text-gray-500
-                           dark:hover:border-white/30 hover:border-gray-400
-                           dark:hover:text-white hover:text-gray-900
-                           dark:hover:bg-white/[.07] hover:bg-gray-100
-                           hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                    data-target="domainReplace" data-value="[RP]">[RP]</button>
-          </div>
-          <div class="font-mono text-[10px] dark:text-white/30 text-gray-400 mt-[6px]">Leave empty to strip domain entirely</div>
-        </div>
-
-        <!-- Divider -->
-        <div class="divider-line dark:bg-white/[.05] bg-gray-200">
-          <div class="absolute top-0 left-[-40%] w-[40%] h-full"
-               style="background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:dividerSweep 4s ease-in-out infinite"></div>
-        </div>
-
-        <!-- Message-ID -->
-        <div class="mb-[14px]">
-          <div class="font-mono text-[10px] uppercase tracking-[1.5px] dark:text-white/60 text-gray-500 mb-[7px]">
-            Message-ID tag
-          </div>
-          <input type="text" id="msgTag" value="[EID]"
-                 class="w-full px-[14px] py-[10px] font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none
-                        dark:bg-[#0d0d0d] bg-gray-50
-                        dark:border dark:border-white/[.07] border border-gray-200
-                        dark:text-white/70 text-gray-700
-                        focus:dark:border-white/[.22] focus:border-gray-400
-                        transition-all duration-200">
-          <div class="flex flex-wrap gap-[6px] mt-[9px]">
-            <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                           border dark:border-white/10 border-gray-300
-                           dark:bg-white/[.03] bg-gray-50
-                           dark:text-white/40 text-gray-500
-                           dark:hover:border-white/30 hover:border-gray-400
-                           dark:hover:text-white hover:text-gray-900
-                           dark:hover:bg-white/[.07] hover:bg-gray-100
-                           hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                    data-target="msgTag" data-value="[EID]">[EID]</button>
-            <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                           border dark:border-white/10 border-gray-300
-                           dark:bg-white/[.03] bg-gray-50
-                           dark:text-white/40 text-gray-500
-                           dark:hover:border-white/30 hover:border-gray-400
-                           dark:hover:text-white hover:text-gray-900
-                           dark:hover:bg-white/[.07] hover:bg-gray-100
-                           hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                    data-target="msgTag" data-value="">(none)</button>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="divider-line dark:bg-white/[.05] bg-gray-200">
-          <div class="absolute top-0 left-[-40%] w-[40%] h-full"
-               style="background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:dividerSweep 4s ease-in-out 1.3s infinite"></div>
-        </div>
-
-        <!-- Sender -->
-        <div class="mb-[14px]">
-          <div class="flex items-center justify-between mb-3">
-            <div class="font-mono text-[10px] uppercase tracking-[1.5px] dark:text-white/60 text-gray-500">Sender header</div>
-            <div class="flex items-center gap-2">
-              <span id="senderLbl" class="font-mono text-[10px] dark:text-white/20 text-gray-400 transition-colors duration-200">Off</span>
-              <!-- Toggle -->
-              <div id="senderToggle"
-                   class="relative w-9 h-5 rounded-full cursor-pointer border transition-all duration-250
-                          dark:bg-[#0e0e0e] bg-gray-200
-                          dark:border-white/10 border-gray-300"
-                   style="">
-                <div class="toggle-thumb absolute top-[3px] left-[3px] w-3 h-3 rounded-full dark:bg-[#555] bg-white shadow-sm"></div>
-              </div>
-            </div>
-          </div>
-          <div id="senderFields" class="opacity-20 pointer-events-none transition-opacity duration-200">
-            <div class="flex items-center gap-2 mb-2">
-              <input type="text" id="senderUser" value="adobe"
-                     class="w-[88px] shrink-0 px-[14px] py-[10px] font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none
-                            dark:bg-[#0d0d0d] bg-gray-50
-                            dark:border dark:border-white/[.07] border border-gray-200
-                            dark:text-white/70 text-gray-700
-                            focus:dark:border-white/[.22] focus:border-gray-400
-                            transition-all duration-200">
-              <span class="dark:text-white/10 text-gray-300 font-mono text-sm">@</span>
-              <input type="text" id="senderDomain" value="[RDNS]"
-                     class="flex-1 px-[14px] py-[10px] font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none
-                            dark:bg-[#0d0d0d] bg-gray-50
-                            dark:border dark:border-white/[.07] border border-gray-200
-                            dark:text-white/70 text-gray-700
-                            focus:dark:border-white/[.22] focus:border-gray-400
-                            transition-all duration-200">
-            </div>
-            <div class="flex flex-wrap gap-[6px]">
-              <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                             border dark:border-white/10 border-gray-300
-                             dark:bg-white/[.03] bg-gray-50
-                             dark:text-white/40 text-gray-500
-                             dark:hover:border-white/30 hover:border-gray-400
-                             dark:hover:text-white hover:text-gray-900
-                             dark:hover:bg-white/[.07] hover:bg-gray-100
-                             hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                      data-target="senderDomain" data-value="[RDNS]">[RDNS]</button>
-              <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                             border dark:border-white/10 border-gray-300
-                             dark:bg-white/[.03] bg-gray-50
-                             dark:text-white/40 text-gray-500
-                             dark:hover:border-white/30 hover:border-gray-400
-                             dark:hover:text-white hover:text-gray-900
-                             dark:hover:bg-white/[.07] hover:bg-gray-100
-                             hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                      data-target="senderDomain" data-value="[P_RPATH]">[P_RPATH]</button>
-              <button class="chip-btn relative overflow-hidden font-mono text-[10px] font-medium px-[11px] py-1 rounded-full cursor-pointer
-                             border dark:border-white/10 border-gray-300
-                             dark:bg-white/[.03] bg-gray-50
-                             dark:text-white/40 text-gray-500
-                             dark:hover:border-white/30 hover:border-gray-400
-                             dark:hover:text-white hover:text-gray-900
-                             dark:hover:bg-white/[.07] hover:bg-gray-100
-                             hover:-translate-y-px transition-all duration-150 whitespace-nowrap"
-                      data-target="senderDomain" data-value="[RP]">[RP]</button>
-            </div>
-            <div id="senderPreview" class="font-mono text-[11px] dark:text-white/25 text-gray-400 mt-2 min-h-[16px]"></div>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="divider-line dark:bg-white/[.05] bg-gray-200">
-          <div class="absolute top-0 left-[-40%] w-[40%] h-full"
-               style="background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:dividerSweep 4s ease-in-out 2.6s infinite"></div>
-        </div>
-
-        <!-- Checkboxes -->
-        <div class="grid grid-cols-2 gap-[2px] mb-1">
-          <label class="flex items-center gap-[9px] px-2 py-[6px] rounded-lg cursor-pointer
-                        dark:hover:bg-white/[.025] hover:bg-gray-100 transition-colors duration-150">
-            <input type="checkbox" id="replaceDate" checked
-                   class="w-[14px] h-[14px] rounded-[4px] border appearance-none cursor-pointer relative transition-all duration-150
-                          dark:border-white/20 border-gray-300
-                          checked:dark:bg-white checked:bg-gray-900
-                          checked:border-current">
-            <span class="font-mono text-[11px] dark:text-white text-gray-800">Date → [DATE]</span>
-          </label>
-          <label class="flex items-center gap-[9px] px-2 py-[6px] rounded-lg cursor-pointer
-                        dark:hover:bg-white/[.025] hover:bg-gray-100 transition-colors duration-150">
-            <input type="checkbox" id="replaceTo" checked
-                   class="w-[14px] h-[14px] rounded-[4px] border appearance-none cursor-pointer relative transition-all duration-150
-                          dark:border-white/20 border-gray-300
-                          checked:dark:bg-white checked:bg-gray-900
-                          checked:border-current">
-            <span class="font-mono text-[11px] dark:text-white text-gray-800">To → [*to]</span>
-          </label>
-          <label class="flex items-center gap-[9px] px-2 py-[6px] rounded-lg cursor-pointer
-                        dark:hover:bg-white/[.025] hover:bg-gray-100 transition-colors duration-150">
-            <input type="checkbox" id="keepReceived" checked
-                   class="w-[14px] h-[14px] rounded-[4px] border appearance-none cursor-pointer relative transition-all duration-150
-                          dark:border-white/20 border-gray-300
-                          checked:dark:bg-white checked:bg-gray-900
-                          checked:border-current">
-            <span class="font-mono text-[11px] dark:text-white text-gray-800">Keep Received:</span>
-          </label>
-          <label class="flex items-center gap-[9px] px-2 py-[6px] rounded-lg cursor-pointer
-                        dark:hover:bg-white/[.025] hover:bg-gray-100 transition-colors duration-150">
-            <input type="checkbox" id="keepReplyTo" checked
-                   class="w-[14px] h-[14px] rounded-[4px] border appearance-none cursor-pointer relative transition-all duration-150
-                          dark:border-white/20 border-gray-300
-                          checked:dark:bg-white checked:bg-gray-900
-                          checked:border-current">
-            <span class="font-mono text-[11px] dark:text-white text-gray-800">Keep Reply-To:</span>
-          </label>
-          <label class="col-span-2 flex items-center gap-[9px] px-2 py-[6px] rounded-lg cursor-pointer
-                        dark:hover:bg-white/[.025] hover:bg-gray-100 transition-colors duration-150">
-            <input type="checkbox" id="addCc"
-                   class="w-[14px] h-[14px] rounded-[4px] border appearance-none cursor-pointer relative transition-all duration-150
-                          dark:border-white/20 border-gray-300
-                          checked:dark:bg-white checked:bg-gray-900
-                          checked:border-current">
-            <span class="font-mono text-[11px] dark:text-white text-gray-800">Add Cc: [*to] if missing</span>
-          </label>
-        </div>
-
-        <!-- Process button -->
-        <button id="processBtn"
-                class="process-btn relative overflow-hidden w-full mt-4 py-[13px]
-                       dark:bg-white dark:text-black bg-gray-900 text-white
-                       border-none rounded-[12px]
-                       font-syne font-bold text-[12px] tracking-[2.5px] uppercase
-                       cursor-pointer transition-[letter-spacing] duration-250">
-          Process Headers →
-        </button>
-      </div>
     </div>
 
-    <!-- Output -->
-    <div class="card-wrap relative overflow-hidden rounded-[18px] border
-                dark:bg-[#111111] bg-white
-                dark:border-white/[.08] border-gray-200
-                hover:dark:border-white/[.18] hover:border-gray-300
-                p-[22px] mb-3 fu d4 transition-colors duration-300">
-      <div class="flex items-center justify-between mb-[14px]">
-        <div class="flex items-center gap-[10px] flex-1">
-          <span class="font-mono text-[10px] uppercase tracking-[2px] dark:text-white text-gray-900">Processed headers</span>
-          <div class="flex-1 h-px dark:bg-white/[.05] bg-gray-200"></div>
-        </div>
-        <button id="copyBtn"
-                class="copy-btn relative overflow-hidden flex items-center gap-[6px] px-[15px] py-[7px]
-                       rounded-[8px] border cursor-pointer
-                       dark:border-white/[.09] border-gray-200
-                       dark:bg-white/[.03] bg-gray-50
-                       dark:text-white/30 text-gray-400
-                       dark:hover:border-white/[.22] hover:border-gray-400
-                       dark:hover:text-white/70 hover:text-gray-700
-                       dark:hover:bg-white/[.06] hover:bg-gray-100
-                       font-mono text-[11px] transition-all duration-200 ml-4">
-          <svg width="11" height="11" fill="none" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/></svg>
-          Copy
-        </button>
-      </div>
-      <textarea id="outputText" readonly
-                class="w-full h-40 p-5 font-mono text-[12px] leading-[1.75] rounded-[10px] outline-none resize-y cursor-default
-                       dark:bg-[#0d0d0d] bg-gray-50
-                       dark:border dark:border-white/[.07] border border-gray-200
-                       dark:text-white/25 text-gray-400
-                       transition-all duration-200"
-                placeholder="Output appears here..."></textarea>
-    </div>
+    <div class="card fu d3" style="max-height:580px;overflow-y:auto">
+      <div class="sec-label">Processing options</div>
 
-    <!-- Info -->
-    <div class="card-wrap relative overflow-hidden rounded-[18px] border
-                dark:bg-[#111111] bg-white
-                dark:border-white/[.08] border-gray-200
-                hover:dark:border-white/[.18] hover:border-gray-300
-                p-[22px] fu d5 transition-colors duration-300">
-      <div class="flex items-center gap-[10px] mb-[14px]">
-        <span class="font-mono text-[10px] uppercase tracking-[2px] dark:text-white text-gray-900">How it works</span>
-        <div class="flex-1 h-px dark:bg-white/[.05] bg-gray-200"></div>
+      <div style="margin-bottom:14px">
+        <div class="flabel">Domain replacement</div>
+        <input type="text" id="domainReplace" placeholder="e.g. example.com or [P_RPATH]">
+        <div class="chips">
+          <button class="chip" data-t="domainReplace" data-v="[P_RPATH]">[P_RPATH]</button>
+          <button class="chip" data-t="domainReplace" data-v="[RDNS]">[RDNS]</button>
+          <button class="chip" data-t="domainReplace" data-v="[RP]">[RP]</button>
+        </div>
+        <div class="hint">Leave empty to strip domain entirely</div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Replaces From domain with token or domain
-        </div>
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Tags Message-ID with [EID] or custom tag
-        </div>
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Injects Sender: &lt;user@[RDNS]&gt; after From
-        </div>
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Replaces Date and To with placeholders
-        </div>
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Removes ARC, DKIM, SPF, Delivered-To
-        </div>
-        <div class="font-mono text-[11px] dark:text-white/20 text-gray-400 flex gap-2">
-          <span class="dark:text-white/10 text-gray-300">→</span>Strips Original Message blocks
-        </div>
-      </div>
-    </div>
 
-    <footer class="text-center mt-8 font-mono text-[10px] dark:text-white/10 text-gray-300 tracking-[2px] uppercase fu d5">
-      mohamed hichy — WMN2 © 2025
-    </footer>
+      <div class="div"></div>
+
+      <div style="margin-bottom:14px">
+        <div class="flabel">Message-ID tag</div>
+        <input type="text" id="msgTag" value="[EID]">
+        <div class="chips">
+          <button class="chip" data-t="msgTag" data-v="[EID]">[EID]</button>
+          <button class="chip" data-t="msgTag" data-v="">(none)</button>
+        </div>
+      </div>
+
+      <div class="div"></div>
+
+      <div style="margin-bottom:14px">
+        <div class="toggle-row">
+          <div class="flabel" style="margin:0">Sender header</div>
+          <div class="toggle-wrap">
+            <span class="toggle-lbl" id="swLbl">Off</span>
+            <div class="sw" id="senderSw"><div class="sw-thumb"></div></div>
+          </div>
+        </div>
+        <div id="senderFields" style="opacity:.3;pointer-events:none;transition:opacity .2s">
+          <div class="sender-row">
+            <input class="u" type="text" id="sUser" value="adobe">
+            <span class="at-sym">@</span>
+            <input type="text" id="sDomain" value="[RDNS]">
+          </div>
+          <div class="chips">
+            <button class="chip" data-t="sDomain" data-v="[RDNS]">[RDNS]</button>
+            <button class="chip" data-t="sDomain" data-v="[P_RPATH]">[P_RPATH]</button>
+            <button class="chip" data-t="sDomain" data-v="[RP]">[RP]</button>
+          </div>
+          <div class="sender-preview" id="sPreview"></div>
+        </div>
+      </div>
+
+      <div class="div"></div>
+
+      <div class="cb-grid">
+        <label class="cb-row"><input type="checkbox" id="cbDate" checked><span class="cb-lbl">Date → [DATE]</span></label>
+        <label class="cb-row"><input type="checkbox" id="cbTo" checked><span class="cb-lbl">To → [*to]</span></label>
+        <label class="cb-row"><input type="checkbox" id="cbRcv" checked><span class="cb-lbl">Keep Received:</span></label>
+        <label class="cb-row"><input type="checkbox" id="cbRpl" checked><span class="cb-lbl">Keep Reply-To:</span></label>
+        <label class="cb-row span2"><input type="checkbox" id="cbCc"><span class="cb-lbl">Add Cc: [*to] if missing</span></label>
+      </div>
+
+      <button class="proc-btn" id="procBtn">Process Headers →</button>
+    </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast"
-       class="fixed bottom-5 right-5 flex items-center gap-2 px-[18px] py-[10px]
-              rounded-[10px] border
-              dark:bg-[#0e0e0e] bg-white
-              dark:border-white/[.12] border-gray-200
-              dark:text-white/70 text-gray-600
-              font-mono text-[11px] shadow-lg
-              translate-y-[60px] opacity-0 z-[999]
-              transition-all duration-[350ms] [transition-timing-function:cubic-bezier(.68,-.55,.27,1.55)]">
+  <div class="card fu d4">
+    <div class="out-hdr">
+      <div class="out-hdr-left">
+        <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-2)">Processed headers</span>
+        <span class="lines-badge" id="linesBadge"></span>
+      </div>
+      <button class="copy-btn" id="copyBtn">
+        <svg id="copyIcon" width="11" height="11" fill="none" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span id="copyLbl">Copy</span>
+      </button>
+    </div>
+    <textarea id="outputText" readonly placeholder="Output appears here..."></textarea>
+  </div>
+
+  <div class="card fu d5" style="margin-top:12px">
+    <div class="sec-label">How it works</div>
+    <div class="how-grid">
+      <div class="how-item"><span>→</span>Replaces From domain with token or domain</div>
+      <div class="how-item"><span>→</span>Tags Message-ID with [EID] or custom tag</div>
+      <div class="how-item"><span>→</span>Injects Sender: &lt;user@[RDNS]&gt; after From</div>
+      <div class="how-item"><span>→</span>Replaces Date and To with placeholders</div>
+      <div class="how-item"><span>→</span>Removes ARC, DKIM, SPF, Delivered-To</div>
+      <div class="how-item"><span>→</span>Strips Original Message blocks</div>
+    </div>
+  </div>
+
+  <footer class="fu d5">mohamed hichy — WMN2 © 2025</footer>
+</div>
+
+<!-- Dark Mode Toggle -->
+<button class="theme-btn" id="themeBtn" title="Toggle dark mode">
+  <svg id="themeIcon" width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<!-- Telegram Badge -->
+<a href="https://t.me/Hichy33" target="_blank" rel="noopener" class="tg-badge">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" fill="#2AABEE"/>
+    <path d="M17.5 7.5l-2.3 10.8c-.17.75-.62.93-1.25.58l-3.43-2.53-1.66 1.6c-.18.18-.34.34-.69.34l.25-3.5 6.37-5.75c.28-.25-.06-.38-.43-.14L6.5 14.25 3.2 13.27c-.74-.23-.75-.74.15-1.1L16.5 7.13c.62-.22 1.15.15.95 1.1l.05-.73z" fill="white"/>
+  </svg>
+  @Hichy33
+</a>
+
+<div id="toastOuter">
+  <div class="toast-wrap" id="toast">
     <svg width="11" height="11" fill="none" viewBox="0 0 16 16"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     Copied to clipboard
   </div>
-
-  <!-- Checkbox check mark style -->
-  <style>
-    input[type=checkbox]:checked::after {
-      content: '';
-      position: absolute;
-      left: 4px; top: 1px;
-      width: 4px; height: 8px;
-      border-width: 0 1.5px 1.5px 0;
-      border-style: solid;
-      transform: rotate(45deg);
-    }
-    .dark input[type=checkbox]:checked::after { border-color: #000; }
-    input[type=checkbox]:checked::after { border-color: #fff; }
-    .dark input[type=checkbox]:checked { background: #fff; border-color: #fff; }
-    input[type=checkbox]:checked { background: #111; border-color: #111; }
-
-    /* Toggle active state */
-    #senderToggle.active {
-      background: #fff !important;
-      border-color: #fff !important;
-    }
-    .dark #senderToggle.active {
-      background: #fff !important;
-      border-color: #fff !important;
-    }
-    #senderToggle.active .toggle-thumb {
-      left: 19px !important;
-      background: #000 !important;
-    }
-
-    /* Title shimmer classes */
-    .dark .title-shimmer-dark-apply {
-      background: linear-gradient(90deg, #fff 0%, #fff 35%, #aaa 45%, #fff 55%, #fff 100%);
-      background-size: 300% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: shimmer 5s linear infinite;
-    }
-    .title-shimmer-light-apply {
-      background: linear-gradient(90deg, #111 0%, #111 35%, #666 45%, #111 55%, #111 100%);
-      background-size: 300% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: shimmer 5s linear infinite;
-    }
-  </style>
+</div>
 
 <script>
-  // ─── Theme persistence ───
-  (function() {
-    const saved = localStorage.getItem('wmn2-theme');
-    if (saved === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-  })();
+let senderOn=false;
 
-  function updateTitleShimmer() {
-    const titleEl = document.getElementById('titleEl');
-    const isDark = document.documentElement.classList.contains('dark');
-    titleEl.className = `font-syne font-extrabold text-[72px] tracking-[-4px] leading-none mb-3 ${
-      isDark ? 'title-shimmer-dark-apply' : 'title-shimmer-light-apply'
-    }`;
-  }
-
-  function updateThemeUI() {
-    const isDark = document.documentElement.classList.contains('dark');
-    document.getElementById('themeIcon').textContent = isDark ? '🌙' : '☀️';
-    document.getElementById('themeLabel').textContent = isDark ? 'Light mode' : 'Dark mode';
-    updateTitleShimmer();
-  }
-
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const html = document.documentElement;
-    if (html.classList.contains('dark')) {
-      html.classList.remove('dark');
-      localStorage.setItem('wmn2-theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('wmn2-theme', 'dark');
-    }
-    updateThemeUI();
-  });
-
-  // Init title shimmer
-  updateTitleShimmer();
-
-  // ─── Chip buttons ───
-  document.querySelectorAll('button[data-target]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const el = document.getElementById(btn.dataset.target);
-      if (el) { el.value = btn.dataset.value; el.dispatchEvent(new Event('input')); }
-    });
-  });
-
-  // ─── Sender toggle ───
-  let senderOn = false;
-
-  function setSender(on) {
-    senderOn = on;
-    const track = document.getElementById('senderToggle');
-    const fields = document.getElementById('senderFields');
-    const lbl = document.getElementById('senderLbl');
-    if (on) {
-      track.classList.add('active');
-      fields.style.opacity = '1';
-      fields.style.pointerEvents = 'auto';
-      lbl.textContent = 'On';
-    } else {
-      track.classList.remove('active');
-      fields.style.opacity = '0.2';
-      fields.style.pointerEvents = 'none';
-      lbl.textContent = 'Off';
-    }
+document.querySelectorAll('[data-t]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const el=document.getElementById(btn.dataset.t);
+    if(el){el.value=btn.dataset.v;process();}
     updatePreview();
-  }
-  document.getElementById('senderToggle').addEventListener('click', () => setSender(!senderOn));
-
-  function updatePreview() {
-    const u = document.getElementById('senderUser').value.trim();
-    const d = document.getElementById('senderDomain').value.trim();
-    document.getElementById('senderPreview').textContent =
-      (senderOn && u && d) ? `→ Sender: <${u}@${d}>` : '';
-  }
-  document.getElementById('senderUser').addEventListener('input', updatePreview);
-  document.getElementById('senderDomain').addEventListener('input', updatePreview);
-
-  // ─── Processing logic ───
-  function replaceFrom(t, rep) {
-    const r = rep.trim();
-    let o = t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (m, name, user) =>
-      r ? `From: ${name.trim()} <${user}@${r}>` : `From: ${name.trim()} <${user}>`);
-    o = o.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (m, user) =>
-      r ? `From: ${user}@${r}` : `From: ${user}`);
-    return o;
-  }
-  function tagMsgId(t, tag) {
-    return t.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim, (m, l, r) => `Message-ID: <${l}${tag}@${r}>`);
-  }
-  function stripBlocks(t) {
-    return t.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, '')
-            .replace(/Message d'origine[\s\S]*?Copier dans le presse-papiers\s*/gi, '');
-  }
-  function stripHeaders(t) {
-    const keepRcv = document.getElementById('keepReceived').checked;
-    const keepRpl = document.getElementById('keepReplyTo').checked;
-    const del = ['ARC-Authentication-Results:','ARC-Message-Signature:','Delivered-To:','DKIM-Signature:',
-      'Authentication-Results:','Received-SPF:','Return-Path:','X-Received:',
-      'X-Google-Smtp-Source:','ARC-Seal:','Received:','Reply-To:','sender'];
-    const lines = t.split(/\r?\n/); const out = []; let skip = false;
-    for (const line of lines) {
-      if (del.some(h => line.toLowerCase().startsWith(h.toLowerCase()))) {
-        if (line.toLowerCase().startsWith('received:') && keepRcv) { out.push(line); skip = false; continue; }
-        if (line.toLowerCase().startsWith('reply-to:') && keepRpl) { out.push(line); skip = false; continue; }
-        skip = true; continue;
-      }
-      if (skip && /^[ \t]/.test(line)) continue;
-      skip = false; out.push(line);
-    }
-    return out.join('\n');
-  }
-  function addCcLine(t) {
-    if (/^Cc:/im.test(t)) return t;
-    const lines = t.split(/\r?\n/); let idx = -1;
-    for (let i = 0; i < lines.length; i++) { if (/^To:/i.test(lines[i])) { idx = i + 1; break; } }
-    if (idx === -1) for (let i = 0; i < lines.length; i++) { if (/^From:/i.test(lines[i])) { idx = i + 1; break; } }
-    if (idx === -1) idx = 0;
-    lines.splice(idx, 0, 'Cc: [*to]');
-    return lines.join('\n');
-  }
-  function insertSender(t, user, domain) {
-    const line = `Sender: <${user}@${domain}>`;
-    const lines = t.split(/\r?\n/); let idx = 0;
-    for (let i = 0; i < lines.length; i++) { if (/^From:/i.test(lines[i])) { idx = i + 1; break; } }
-    lines.splice(idx, 0, line);
-    return lines.join('\n');
-  }
-
-  document.getElementById('processBtn').addEventListener('click', () => {
-    let r = document.getElementById('inputText').value;
-    const rep = document.getElementById('domainReplace').value;
-    const tag = document.getElementById('msgTag').value.trim();
-    r = replaceFrom(r, rep);
-    if (tag) r = tagMsgId(r, tag);
-    if (document.getElementById('replaceDate').checked) r = r.replace(/^Date:.*$/gim, 'Date: [DATE]');
-    if (document.getElementById('replaceTo').checked) r = r.replace(/^To:.*$/gim, 'To: [*to]');
-    r = stripBlocks(r);
-    r = stripHeaders(r);
-    if (document.getElementById('addCc').checked) r = addCcLine(r);
-    if (senderOn) {
-      const u = document.getElementById('senderUser').value.trim();
-      const d = document.getElementById('senderDomain').value.trim();
-      if (u && d) r = insertSender(r, u, d);
-    }
-    // Make output text readable once filled
-    const out = document.getElementById('outputText');
-    out.value = r;
-    out.classList.remove('dark:text-white/25', 'text-gray-400');
-    out.classList.add('dark:text-white/70', 'text-gray-700');
   });
+});
 
-  document.getElementById('copyBtn').addEventListener('click', () => {
-    const o = document.getElementById('outputText');
-    o.select();
-    document.execCommand('copy');
-    const toast = document.getElementById('toast');
-    toast.classList.remove('translate-y-[60px]', 'opacity-0');
-    toast.classList.add('translate-y-0', 'opacity-100');
-    setTimeout(() => {
-      toast.classList.remove('translate-y-0', 'opacity-100');
-      toast.classList.add('translate-y-[60px]', 'opacity-0');
-    }, 2200);
-  });
+function setSender(on){
+  senderOn=on;
+  const sw=document.getElementById('senderSw');
+  const fields=document.getElementById('senderFields');
+  const lbl=document.getElementById('swLbl');
+  if(on){sw.classList.add('on');fields.style.opacity='1';fields.style.pointerEvents='auto';lbl.textContent='On';}
+  else{sw.classList.remove('on');fields.style.opacity='.3';fields.style.pointerEvents='none';lbl.textContent='Off';}
+  process();
+}
+document.getElementById('senderSw').addEventListener('click',()=>setSender(!senderOn));
+
+function updatePreview(){
+  const u=document.getElementById('sUser').value.trim();
+  const d=document.getElementById('sDomain').value.trim();
+  document.getElementById('sPreview').textContent=(senderOn&&u&&d)?`→ Sender: <${u}@${d}>`:'';
+}
+['sUser','sDomain'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updatePreview();process();}));
+
+function replaceFrom(t,rep){
+  const r=rep.trim();
+  let o=t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim,(m,name,user)=>r?`From: ${name.trim()} <${user}@${r}>`:`From: ${name.trim()} <${user}>`);
+  o=o.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim,(m,user)=>r?`From: ${user}@${r}`:`From: ${user}`);
+  return o;
+}
+function tagMsgId(t,tag){return t.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim,(m,l,r)=>`Message-ID: <${l}${tag}@${r}>`);}
+function stripBlocks(t){return t.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi,'').replace(/Message d'origine[\s\S]*?Copier dans le presse-papiers\s*/gi,'');}
+function stripHeaders(t,keepRcv,keepRpl){
+  const del=['arc-authentication-results:','arc-message-signature:','delivered-to:','dkim-signature:','authentication-results:','received-spf:','return-path:','x-received:','x-google-smtp-source:','arc-seal:','received:','reply-to:','sender:'];
+  const lines=t.split(/\r?\n/);const out=[];let skip=false;
+  for(const line of lines){
+    const ll=line.toLowerCase();
+    const match=del.find(h=>ll.startsWith(h));
+    if(match){
+      if(ll.startsWith('received:')&&keepRcv){out.push(line);skip=false;continue;}
+      if(ll.startsWith('reply-to:')&&keepRpl){out.push(line);skip=false;continue;}
+      skip=true;continue;
+    }
+    if(skip&&/^[ \t]/.test(line))continue;
+    skip=false;out.push(line);
+  }
+  return out.join('\n');
+}
+function addCcLine(t){
+  if(/^Cc:/im.test(t))return t;
+  const lines=t.split(/\r?\n/);let idx=-1;
+  for(let i=0;i<lines.length;i++){if(/^To:/i.test(lines[i])){idx=i+1;break;}}
+  if(idx===-1)for(let i=0;i<lines.length;i++){if(/^From:/i.test(lines[i])){idx=i+1;break;}}
+  if(idx===-1)idx=0;
+  lines.splice(idx,0,'Cc: [*to]');
+  return lines.join('\n');
+}
+function insertSender(t,user,domain){
+  const lines=t.split(/\r?\n/);let idx=0;
+  for(let i=0;i<lines.length;i++){if(/^From:/i.test(lines[i])){idx=i+1;break;}}
+  lines.splice(idx,0,`Sender: <${user}@${domain}>`);
+  return lines.join('\n');
+}
+function process(){
+  let r=document.getElementById('inputText').value;
+  const rep=document.getElementById('domainReplace').value;
+  const tag=document.getElementById('msgTag').value.trim();
+  r=replaceFrom(r,rep);
+  if(tag)r=tagMsgId(r,tag);
+  if(document.getElementById('cbDate').checked)r=r.replace(/^Date:.*$/gim,'Date: [DATE]');
+  if(document.getElementById('cbTo').checked)r=r.replace(/^To:.*$/gim,'To: [*to]');
+  r=stripBlocks(r);
+  r=stripHeaders(r,document.getElementById('cbRcv').checked,document.getElementById('cbRpl').checked);
+  if(document.getElementById('cbCc').checked)r=addCcLine(r);
+  if(senderOn){const u=document.getElementById('sUser').value.trim();const d=document.getElementById('sDomain').value.trim();if(u&&d)r=insertSender(r,u,d);}
+  const out=document.getElementById('outputText');
+  out.value=r.trim();
+  const lines=r.trim()?r.trim().split('\n').length:0;
+  document.getElementById('linesBadge').textContent=lines?`${lines} lines`:'';
+  out.classList.toggle('has-content',!!r.trim());
+  updatePreview();
+}
+['inputText','domainReplace','msgTag'].forEach(id=>document.getElementById(id).addEventListener('input',process));
+['cbDate','cbTo','cbRcv','cbRpl','cbCc'].forEach(id=>document.getElementById(id).addEventListener('change',process));
+document.getElementById('procBtn').addEventListener('click',process);
+
+let copyTimer;
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const out=document.getElementById('outputText');
+  if(!out.value)return;
+  out.select();
+  try{document.execCommand('copy');}catch(e){navigator.clipboard&&navigator.clipboard.writeText(out.value);}
+  const btn=document.getElementById('copyBtn');
+  btn.classList.add('copied');
+  document.getElementById('copyLbl').textContent='Copied';
+  document.getElementById('copyIcon').innerHTML='<path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  clearTimeout(copyTimer);
+  copyTimer=setTimeout(()=>{
+    btn.classList.remove('copied');
+    document.getElementById('copyLbl').textContent='Copy';
+    document.getElementById('copyIcon').innerHTML='<rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/>';
+  },1600);
+  const toast=document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2200);
+});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();document.getElementById('copyBtn').click();}});
+
+// Dark mode toggle
+const SUN='<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="2" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'; 
+const MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'; 
+const root=document.documentElement;
+const icon=document.getElementById('themeIcon');
+let dark=(localStorage.getItem('theme')==='dark');
+function applyTheme(){
+  root.setAttribute('data-theme',dark?'dark':'light');
+  icon.innerHTML=dark?SUN:MOON;
+  localStorage.setItem('theme',dark?'dark':'light');
+}
+applyTheme();
+document.getElementById('themeBtn').addEventListener('click',()=>{dark=!dark;applyTheme();});
+process();
 </script>
-</body>
-</html>
+
+<script>
+// Oil Painting Background - adapted from http://wonderfl.net/c/92Ul
+(function(){
+  const canvas = document.getElementById('oilCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  const palette = ['#3d6b4f','#2a5038','#5a8f6e','#8ab89a','#c4d9cb','#b0c4b1','#4a7c5f','#6aab83'];
+  let colour = palette[Math.floor(Math.random()*palette.length)];
+
+  let startPos = {x: 0, y: 0};
+  let prevPos  = {x: 0, y: 0};
+  let dist     = {x: 0, y: 0};
+  let active   = false;
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    startPos = {x: W/2, y: H/2};
+    prevPos  = {x: W/2, y: 0};
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function paint(ex, ey){
+    const dx = prevPos.x - startPos.x;
+    const dy = prevPos.y - startPos.y;
+    const distance = Math.sqrt(dx*dx + dy*dy) || 1;
+    const a = distance * 10 * (Math.pow(Math.random(), 2) - 0.5);
+    const r = Math.random() - 0.5;
+    const size = (Math.random() * 15) / distance;
+
+    dist.x = dx * Math.sin(0.5) + startPos.x;
+    dist.y = dy * Math.cos(0.5) + startPos.y;
+
+    startPos.x = prevPos.x;
+    startPos.y = prevPos.y;
+    prevPos.x  = ex;
+    prevPos.y  = ey;
+
+    const lw = (Math.random()+20/10-0.5)*size+(1-Math.random()+30/20-0.5)*size;
+    ctx.lineWidth  = lw;
+    ctx.lineCap    = 'round';
+    ctx.lineJoin   = 'round';
+    ctx.strokeStyle = colour;
+    ctx.fillStyle   = colour;
+
+    ctx.beginPath();
+    ctx.moveTo(startPos.x, startPos.y);
+    ctx.quadraticCurveTo(dist.x, dist.y, prevPos.x, prevPos.y);
+    ctx.moveTo(startPos.x + a, startPos.y + a);
+    ctx.lineTo(startPos.x + r + a, startPos.y + r + a);
+    ctx.stroke();
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  // Auto-animate a gentle wandering brush
+  let angle = Math.random() * Math.PI * 2;
+  let bx = W/2, by = H/2;
+  let speed = 1.5;
+  let stepCount = 0;
+
+  function autoStep(){
+    angle += (Math.random() - 0.5) * 0.18;
+    bx += Math.cos(angle) * speed;
+    by += Math.sin(angle) * speed;
+    // bounce off edges with soft margin
+    if(bx < 60)  { angle = Math.random() * Math.PI - Math.PI/2; bx = 61; }
+    if(bx > W-60){ angle = Math.random() * Math.PI + Math.PI/2; bx = W-61; }
+    if(by < 60)  { angle = Math.random() * Math.PI; by = 61; }
+    if(by > H-60){ angle = -Math.random() * Math.PI; by = H-61; }
+
+    paint(bx, by);
+    stepCount++;
+    if(stepCount % 120 === 0){
+      colour = palette[Math.floor(Math.random()*palette.length)];
+    }
+    requestAnimationFrame(autoStep);
+  }
+  autoStep();
+
+  // Also react to real mouse over the whole window
+  window.addEventListener('mousemove', e => {
+    paint(e.clientX, e.clientY);
+    bx = e.clientX; by = e.clientY;
+  });
+  window.addEventListener('click', () => {
+    colour = palette[Math.floor(Math.random()*palette.length)];
+  });
+})();
+</script>
