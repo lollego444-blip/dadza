@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WMN2 — Email Header Tool</title>
+
 <!-- Oil Painting Background Canvas -->
 <canvas id="oilCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.18"></canvas>
 
@@ -114,7 +121,11 @@ footer{text-align:center;margin-top:28px;font-family:var(--mono);font-size:10px;
 .toast-wrap{background:var(--card);border:1px solid var(--border-h);border-radius:10px;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--accent-text);transform:translateY(60px);opacity:0;transition:all .35s cubic-bezier(.68,-.55,.27,1.55);pointer-events:none}
 .toast-wrap.show{transform:translateY(0);opacity:1}
 #toastOuter{position:fixed;bottom:20px;right:20px;z-index:999}
+/* from-preview highlight */
+.from-preview{font-family:var(--mono);font-size:11px;color:var(--accent-text);min-height:16px;margin-top:4px}
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <header class="hdr fu d1">
@@ -124,6 +135,7 @@ footer{text-align:center;margin-top:28px;font-family:var(--mono);font-size:10px;
   </header>
 
   <div class="grid">
+    <!-- INPUT -->
     <div class="card fu d2">
       <div class="sec-label">Input headers</div>
       <textarea id="inputText" placeholder="Paste email headers here...">From: Ring &lt;no-reply@here.com&gt;
@@ -132,9 +144,11 @@ To: someone@example.com
 Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     </div>
 
-    <div class="card fu d3" style="max-height:580px;overflow-y:auto">
+    <!-- OPTIONS -->
+    <div class="card fu d3" style="max-height:660px;overflow-y:auto">
       <div class="sec-label">Processing options</div>
 
+      <!-- Domain replacement -->
       <div style="margin-bottom:14px">
         <div class="flabel">Domain replacement</div>
         <input type="text" id="domainReplace" placeholder="e.g. example.com or [P_RPATH]">
@@ -148,6 +162,23 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
 
       <div class="div"></div>
 
+      <!-- ★ NEW: From user tag -->
+      <div style="margin-bottom:14px">
+        <div class="flabel">From user tag</div>
+        <input type="text" id="fromUserTag" value="[3W]" placeholder="e.g. [3W] — appended after username">
+        <div class="chips">
+          <button class="chip" data-t="fromUserTag" data-v="[3W]">[3W]</button>
+          <button class="chip" data-t="fromUserTag" data-v="[EID]">[EID]</button>
+          <button class="chip" data-t="fromUserTag" data-v="[RP]">[RP]</button>
+          <button class="chip" data-t="fromUserTag" data-v="">(none)</button>
+        </div>
+        <div class="hint">Appended to username before @</div>
+        <div class="from-preview" id="fromPreview"></div>
+      </div>
+
+      <div class="div"></div>
+
+      <!-- Message-ID tag -->
       <div style="margin-bottom:14px">
         <div class="flabel">Message-ID tag</div>
         <input type="text" id="msgTag" value="[EID]">
@@ -159,6 +190,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
 
       <div class="div"></div>
 
+      <!-- Sender header toggle -->
       <div style="margin-bottom:14px">
         <div class="toggle-row">
           <div class="flabel" style="margin:0">Sender header</div>
@@ -184,6 +216,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
 
       <div class="div"></div>
 
+      <!-- Checkboxes -->
       <div class="cb-grid">
         <label class="cb-row"><input type="checkbox" id="cbDate" checked><span class="cb-lbl">Date → [DATE]</span></label>
         <label class="cb-row"><input type="checkbox" id="cbTo" checked><span class="cb-lbl">To → [*to]</span></label>
@@ -196,6 +229,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     </div>
   </div>
 
+  <!-- OUTPUT -->
   <div class="card fu d4">
     <div class="out-hdr">
       <div class="out-hdr-left">
@@ -210,15 +244,18 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     <textarea id="outputText" readonly placeholder="Output appears here..."></textarea>
   </div>
 
+  <!-- HOW IT WORKS -->
   <div class="card fu d5" style="margin-top:12px">
     <div class="sec-label">How it works</div>
     <div class="how-grid">
       <div class="how-item"><span>→</span>Replaces From domain with token or domain</div>
+      <div class="how-item"><span>→</span>Tags From username with custom tag (e.g. [3W])</div>
       <div class="how-item"><span>→</span>Tags Message-ID with [EID] or custom tag</div>
       <div class="how-item"><span>→</span>Injects Sender: &lt;user@[RDNS]&gt; after From</div>
       <div class="how-item"><span>→</span>Replaces Date and To with placeholders</div>
       <div class="how-item"><span>→</span>Removes ARC, DKIM, SPF, Delivered-To</div>
       <div class="how-item"><span>→</span>Strips Original Message blocks</div>
+      <div class="how-item"><span>→</span>Adds Cc: [*to] if missing (optional)</div>
     </div>
   </div>
 
@@ -239,6 +276,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
   @Hichy33
 </a>
 
+<!-- Toast -->
 <div id="toastOuter">
   <div class="toast-wrap" id="toast">
     <svg width="11" height="11" fill="none" viewBox="0 0 16 16"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -247,150 +285,270 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
 </div>
 
 <script>
-let senderOn=false;
+// ── State ────────────────────────────────────────────────────
+let senderOn = false;
 
-document.querySelectorAll('[data-t]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const el=document.getElementById(btn.dataset.t);
-    if(el){el.value=btn.dataset.v;process();}
-    updatePreview();
+// ── Chip click handler ───────────────────────────────────────
+document.querySelectorAll('[data-t]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const el = document.getElementById(btn.dataset.t);
+    if (el) { el.value = btn.dataset.v; }
+    updateFromPreview();
+    updateSenderPreview();
+    process();
   });
 });
 
-function setSender(on){
-  senderOn=on;
-  const sw=document.getElementById('senderSw');
-  const fields=document.getElementById('senderFields');
-  const lbl=document.getElementById('swLbl');
-  if(on){sw.classList.add('on');fields.style.opacity='1';fields.style.pointerEvents='auto';lbl.textContent='On';}
-  else{sw.classList.remove('on');fields.style.opacity='.3';fields.style.pointerEvents='none';lbl.textContent='Off';}
+// ── Sender toggle ────────────────────────────────────────────
+function setSender(on) {
+  senderOn = on;
+  const sw     = document.getElementById('senderSw');
+  const fields = document.getElementById('senderFields');
+  const lbl    = document.getElementById('swLbl');
+  if (on) {
+    sw.classList.add('on');
+    fields.style.opacity = '1';
+    fields.style.pointerEvents = 'auto';
+    lbl.textContent = 'On';
+  } else {
+    sw.classList.remove('on');
+    fields.style.opacity = '.3';
+    fields.style.pointerEvents = 'none';
+    lbl.textContent = 'Off';
+  }
   process();
 }
-document.getElementById('senderSw').addEventListener('click',()=>setSender(!senderOn));
+document.getElementById('senderSw').addEventListener('click', () => setSender(!senderOn));
 
-function updatePreview(){
-  const u=document.getElementById('sUser').value.trim();
-  const d=document.getElementById('sDomain').value.trim();
-  document.getElementById('sPreview').textContent=(senderOn&&u&&d)?`→ Sender: <${u}@${d}>`:'';
+// ── From preview (NEW) ───────────────────────────────────────
+function updateFromPreview() {
+  const tag = document.getElementById('fromUserTag').value.trim();
+  const raw = document.getElementById('inputText').value;
+  // grab first From line user part
+  const m = raw.match(/^From:\s*(?:.*?)<([^@]+)@/im) ||
+            raw.match(/^From:\s*([^@<\s]+)@/im);
+  if (m) {
+    const user = m[1].trim();
+    const rep  = document.getElementById('domainReplace').value.trim();
+    const dom  = rep || '[original domain]';
+    document.getElementById('fromPreview').textContent =
+      tag ? `→ From: ${user}${tag}@${dom}` : `→ From: ${user}@${dom}`;
+  } else {
+    document.getElementById('fromPreview').textContent = tag ? `→ username${tag}@domain` : '';
+  }
 }
-['sUser','sDomain'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updatePreview();process();}));
 
-function replaceFrom(t,rep){
-  const r=rep.trim();
-  let o=t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim,(m,name,user)=>r?`From: ${name.trim()} <${user}@${r}>`:`From: ${name.trim()} <${user}>`);
-  o=o.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim,(m,user)=>r?`From: ${user}@${r}`:`From: ${user}`);
+// ── Sender preview ───────────────────────────────────────────
+function updateSenderPreview() {
+  const u = document.getElementById('sUser').value.trim();
+  const d = document.getElementById('sDomain').value.trim();
+  document.getElementById('sPreview').textContent =
+    (senderOn && u && d) ? `→ Sender: <${u}@${d}>` : '';
+}
+['sUser', 'sDomain'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => {
+    updateSenderPreview();
+    process();
+  })
+);
+
+// ── Core processing functions ────────────────────────────────
+function replaceFrom(t, rep) {
+  const r   = rep.trim();
+  const tag = document.getElementById('fromUserTag').value.trim();
+
+  // Format: From: Name <user@domain>
+  let o = t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (m, name, user) => {
+    const u = tag ? user + tag : user;
+    return r
+      ? `From: ${name.trim()} <${u}@${r}>`
+      : `From: ${name.trim()} <${u}>`;
+  });
+
+  // Format: From: user@domain  (no display name)
+  o = o.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (m, user) => {
+    const u = tag ? user + tag : user;
+    return r ? `From: ${u}@${r}` : `From: ${u}`;
+  });
+
   return o;
 }
-function tagMsgId(t,tag){return t.replace(/^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim,(m,l,r)=>`Message-ID: <${l}${tag}@${r}>`);}
-function stripBlocks(t){return t.replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi,'').replace(/Message d'origine[\s\S]*?Copier dans le presse-papiers\s*/gi,'');}
-function stripHeaders(t,keepRcv,keepRpl){
-  const del=['arc-authentication-results:','arc-message-signature:','delivered-to:','dkim-signature:','authentication-results:','received-spf:','return-path:','x-received:','x-google-smtp-source:','arc-seal:','received:','reply-to:','sender:'];
-  const lines=t.split(/\r?\n/);const out=[];let skip=false;
-  for(const line of lines){
-    const ll=line.toLowerCase();
-    const match=del.find(h=>ll.startsWith(h));
-    if(match){
-      if(ll.startsWith('received:')&&keepRcv){out.push(line);skip=false;continue;}
-      if(ll.startsWith('reply-to:')&&keepRpl){out.push(line);skip=false;continue;}
-      skip=true;continue;
+
+function tagMsgId(t, tag) {
+  return t.replace(
+    /^Message-ID:\s*<([^@<>]+)@([^>]+)>/gim,
+    (m, l, r) => `Message-ID: <${l}${tag}@${r}>`
+  );
+}
+
+function stripBlocks(t) {
+  return t
+    .replace(/Original Message[\s\S]*?Copy to clipboard\s*/gi, '')
+    .replace(/Message d'origine[\s\S]*?Copier dans le presse-papiers\s*/gi, '');
+}
+
+function stripHeaders(t, keepRcv, keepRpl) {
+  const del = [
+    'arc-authentication-results:', 'arc-message-signature:',
+    'delivered-to:', 'dkim-signature:', 'authentication-results:',
+    'received-spf:', 'return-path:', 'x-received:',
+    'x-google-smtp-source:', 'arc-seal:', 'received:', 'reply-to:', 'sender:'
+  ];
+  const lines = t.split(/\r?\n/);
+  const out   = [];
+  let skip    = false;
+
+  for (const line of lines) {
+    const ll    = line.toLowerCase();
+    const match = del.find(h => ll.startsWith(h));
+    if (match) {
+      if (ll.startsWith('received:') && keepRcv) { out.push(line); skip = false; continue; }
+      if (ll.startsWith('reply-to:') && keepRpl)  { out.push(line); skip = false; continue; }
+      skip = true; continue;
     }
-    if(skip&&/^[ \t]/.test(line))continue;
-    skip=false;out.push(line);
+    if (skip && /^[ \t]/.test(line)) continue;
+    skip = false;
+    out.push(line);
   }
   return out.join('\n');
 }
-function addCcLine(t){
-  if(/^Cc:/im.test(t))return t;
-  const lines=t.split(/\r?\n/);let idx=-1;
-  for(let i=0;i<lines.length;i++){if(/^To:/i.test(lines[i])){idx=i+1;break;}}
-  if(idx===-1)for(let i=0;i<lines.length;i++){if(/^From:/i.test(lines[i])){idx=i+1;break;}}
-  if(idx===-1)idx=0;
-  lines.splice(idx,0,'Cc: [*to]');
-  return lines.join('\n');
-}
-function insertSender(t,user,domain){
-  const lines=t.split(/\r?\n/);let idx=0;
-  for(let i=0;i<lines.length;i++){if(/^From:/i.test(lines[i])){idx=i+1;break;}}
-  lines.splice(idx,0,`Sender: <${user}@${domain}>`);
-  return lines.join('\n');
-}
-function process(){
-  let r=document.getElementById('inputText').value;
-  const rep=document.getElementById('domainReplace').value;
-  const tag=document.getElementById('msgTag').value.trim();
-  r=replaceFrom(r,rep);
-  if(tag)r=tagMsgId(r,tag);
-  if(document.getElementById('cbDate').checked)r=r.replace(/^Date:.*$/gim,'Date: [DATE]');
-  if(document.getElementById('cbTo').checked)r=r.replace(/^To:.*$/gim,'To: [*to]');
-  r=stripBlocks(r);
-  r=stripHeaders(r,document.getElementById('cbRcv').checked,document.getElementById('cbRpl').checked);
-  if(document.getElementById('cbCc').checked)r=addCcLine(r);
-  if(senderOn){const u=document.getElementById('sUser').value.trim();const d=document.getElementById('sDomain').value.trim();if(u&&d)r=insertSender(r,u,d);}
-  const out=document.getElementById('outputText');
-  out.value=r.trim();
-  const lines=r.trim()?r.trim().split('\n').length:0;
-  document.getElementById('linesBadge').textContent=lines?`${lines} lines`:'';
-  out.classList.toggle('has-content',!!r.trim());
-  updatePreview();
-}
-['inputText','domainReplace','msgTag'].forEach(id=>document.getElementById(id).addEventListener('input',process));
-['cbDate','cbTo','cbRcv','cbRpl','cbCc'].forEach(id=>document.getElementById(id).addEventListener('change',process));
-document.getElementById('procBtn').addEventListener('click',process);
 
+function addCcLine(t) {
+  if (/^Cc:/im.test(t)) return t;
+  const lines = t.split(/\r?\n/);
+  let idx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^To:/i.test(lines[i])) { idx = i + 1; break; }
+  }
+  if (idx === -1) {
+    for (let i = 0; i < lines.length; i++) {
+      if (/^From:/i.test(lines[i])) { idx = i + 1; break; }
+    }
+  }
+  if (idx === -1) idx = 0;
+  lines.splice(idx, 0, 'Cc: [*to]');
+  return lines.join('\n');
+}
+
+function insertSender(t, user, domain) {
+  const lines = t.split(/\r?\n/);
+  let idx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^From:/i.test(lines[i])) { idx = i + 1; break; }
+  }
+  lines.splice(idx, 0, `Sender: <${user}@${domain}>`);
+  return lines.join('\n');
+}
+
+// ── Main process ─────────────────────────────────────────────
+function process() {
+  let r = document.getElementById('inputText').value;
+
+  const rep = document.getElementById('domainReplace').value;
+  const tag = document.getElementById('msgTag').value.trim();
+
+  r = replaceFrom(r, rep);
+  if (tag) r = tagMsgId(r, tag);
+  if (document.getElementById('cbDate').checked) r = r.replace(/^Date:.*$/gim, 'Date: [DATE]');
+  if (document.getElementById('cbTo').checked)   r = r.replace(/^To:.*$/gim,   'To: [*to]');
+  r = stripBlocks(r);
+  r = stripHeaders(r, document.getElementById('cbRcv').checked, document.getElementById('cbRpl').checked);
+  if (document.getElementById('cbCc').checked) r = addCcLine(r);
+
+  if (senderOn) {
+    const u = document.getElementById('sUser').value.trim();
+    const d = document.getElementById('sDomain').value.trim();
+    if (u && d) r = insertSender(r, u, d);
+  }
+
+  const out = document.getElementById('outputText');
+  out.value = r.trim();
+  const lines = r.trim() ? r.trim().split('\n').length : 0;
+  document.getElementById('linesBadge').textContent = lines ? `${lines} lines` : '';
+  out.classList.toggle('has-content', !!r.trim());
+
+  updateFromPreview();
+  updateSenderPreview();
+}
+
+// ── Input listeners ──────────────────────────────────────────
+['inputText', 'domainReplace', 'msgTag', 'fromUserTag'].forEach(id =>
+  document.getElementById(id).addEventListener('input', process)
+);
+['cbDate', 'cbTo', 'cbRcv', 'cbRpl', 'cbCc'].forEach(id =>
+  document.getElementById(id).addEventListener('change', process)
+);
+document.getElementById('procBtn').addEventListener('click', process);
+
+// ── Copy button ──────────────────────────────────────────────
 let copyTimer;
-document.getElementById('copyBtn').addEventListener('click',()=>{
-  const out=document.getElementById('outputText');
-  if(!out.value)return;
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const out = document.getElementById('outputText');
+  if (!out.value) return;
   out.select();
-  try{document.execCommand('copy');}catch(e){navigator.clipboard&&navigator.clipboard.writeText(out.value);}
-  const btn=document.getElementById('copyBtn');
-  btn.classList.add('copied');
-  document.getElementById('copyLbl').textContent='Copied';
-  document.getElementById('copyIcon').innerHTML='<path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-  clearTimeout(copyTimer);
-  copyTimer=setTimeout(()=>{
-    btn.classList.remove('copied');
-    document.getElementById('copyLbl').textContent='Copy';
-    document.getElementById('copyIcon').innerHTML='<rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/>';
-  },1600);
-  const toast=document.getElementById('toast');
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'),2200);
-});
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();document.getElementById('copyBtn').click();}});
+  try { document.execCommand('copy'); }
+  catch (e) { navigator.clipboard && navigator.clipboard.writeText(out.value); }
 
-// Dark mode toggle
-const SUN='<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="2" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'; 
-const MOON='<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'; 
-const root=document.documentElement;
-const icon=document.getElementById('themeIcon');
-let dark=(localStorage.getItem('theme')==='dark');
-function applyTheme(){
-  root.setAttribute('data-theme',dark?'dark':'light');
-  icon.innerHTML=dark?SUN:MOON;
-  localStorage.setItem('theme',dark?'dark':'light');
+  const btn = document.getElementById('copyBtn');
+  btn.classList.add('copied');
+  document.getElementById('copyLbl').textContent = 'Copied';
+  document.getElementById('copyIcon').innerHTML =
+    '<path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    btn.classList.remove('copied');
+    document.getElementById('copyLbl').textContent = 'Copy';
+    document.getElementById('copyIcon').innerHTML =
+      '<rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/>';
+  }, 1600);
+
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+});
+
+// Ctrl/Cmd+Enter to copy
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('copyBtn').click();
+  }
+});
+
+// ── Dark mode toggle ─────────────────────────────────────────
+const SUN  = '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="2" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+const MOON = '<path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+const root = document.documentElement;
+const icon = document.getElementById('themeIcon');
+let dark = (localStorage.getItem('theme') === 'dark');
+function applyTheme() {
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
+  icon.innerHTML = dark ? SUN : MOON;
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
 }
 applyTheme();
-document.getElementById('themeBtn').addEventListener('click',()=>{dark=!dark;applyTheme();});
+document.getElementById('themeBtn').addEventListener('click', () => { dark = !dark; applyTheme(); });
+
+// ── Init ─────────────────────────────────────────────────────
 process();
 </script>
 
+<!-- Oil Painting Background -->
 <script>
-// Oil Painting Background - adapted from http://wonderfl.net/c/92Ul
 (function(){
   const canvas = document.getElementById('oilCanvas');
-  const ctx = canvas.getContext('2d');
+  const ctx    = canvas.getContext('2d');
   let W, H;
 
   const palette = ['#3d6b4f','#2a5038','#5a8f6e','#8ab89a','#c4d9cb','#b0c4b1','#4a7c5f','#6aab83'];
-  let colour = palette[Math.floor(Math.random()*palette.length)];
+  let colour = palette[Math.floor(Math.random() * palette.length)];
 
-  let startPos = {x: 0, y: 0};
-  let prevPos  = {x: 0, y: 0};
-  let dist     = {x: 0, y: 0};
-  let active   = false;
+  let startPos = {x:0, y:0};
+  let prevPos  = {x:0, y:0};
+  let dist     = {x:0, y:0};
 
-  function resize(){
+  function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
     startPos = {x: W/2, y: H/2};
@@ -399,13 +557,13 @@ process();
   resize();
   window.addEventListener('resize', resize);
 
-  function paint(ex, ey){
-    const dx = prevPos.x - startPos.x;
-    const dy = prevPos.y - startPos.y;
+  function paint(ex, ey) {
+    const dx       = prevPos.x - startPos.x;
+    const dy       = prevPos.y - startPos.y;
     const distance = Math.sqrt(dx*dx + dy*dy) || 1;
-    const a = distance * 10 * (Math.pow(Math.random(), 2) - 0.5);
-    const r = Math.random() - 0.5;
-    const size = (Math.random() * 15) / distance;
+    const a        = distance * 10 * (Math.pow(Math.random(), 2) - 0.5);
+    const r        = Math.random() - 0.5;
+    const size     = (Math.random() * 15) / distance;
 
     dist.x = dx * Math.sin(0.5) + startPos.x;
     dist.y = dy * Math.cos(0.5) + startPos.y;
@@ -415,10 +573,10 @@ process();
     prevPos.x  = ex;
     prevPos.y  = ey;
 
-    const lw = (Math.random()+20/10-0.5)*size+(1-Math.random()+30/20-0.5)*size;
-    ctx.lineWidth  = lw;
-    ctx.lineCap    = 'round';
-    ctx.lineJoin   = 'round';
+    const lw = (Math.random() + 20/10 - 0.5) * size + (1 - Math.random() + 30/20 - 0.5) * size;
+    ctx.lineWidth   = lw;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
     ctx.strokeStyle = colour;
     ctx.fillStyle   = colour;
 
@@ -432,38 +590,30 @@ process();
     ctx.closePath();
   }
 
-  // Auto-animate a gentle wandering brush
   let angle = Math.random() * Math.PI * 2;
   let bx = W/2, by = H/2;
-  let speed = 1.5;
+  const speed = 1.5;
   let stepCount = 0;
 
-  function autoStep(){
+  function autoStep() {
     angle += (Math.random() - 0.5) * 0.18;
     bx += Math.cos(angle) * speed;
     by += Math.sin(angle) * speed;
-    // bounce off edges with soft margin
-    if(bx < 60)  { angle = Math.random() * Math.PI - Math.PI/2; bx = 61; }
-    if(bx > W-60){ angle = Math.random() * Math.PI + Math.PI/2; bx = W-61; }
-    if(by < 60)  { angle = Math.random() * Math.PI; by = 61; }
-    if(by > H-60){ angle = -Math.random() * Math.PI; by = H-61; }
-
+    if (bx < 60)   { angle = Math.random() * Math.PI - Math.PI/2; bx = 61; }
+    if (bx > W-60) { angle = Math.random() * Math.PI + Math.PI/2; bx = W-61; }
+    if (by < 60)   { angle = Math.random() * Math.PI; by = 61; }
+    if (by > H-60) { angle = -Math.random() * Math.PI; by = H-61; }
     paint(bx, by);
     stepCount++;
-    if(stepCount % 120 === 0){
-      colour = palette[Math.floor(Math.random()*palette.length)];
-    }
+    if (stepCount % 120 === 0) colour = palette[Math.floor(Math.random() * palette.length)];
     requestAnimationFrame(autoStep);
   }
   autoStep();
 
-  // Also react to real mouse over the whole window
-  window.addEventListener('mousemove', e => {
-    paint(e.clientX, e.clientY);
-    bx = e.clientX; by = e.clientY;
-  });
-  window.addEventListener('click', () => {
-    colour = palette[Math.floor(Math.random()*palette.length)];
-  });
+  window.addEventListener('mousemove', e => { paint(e.clientX, e.clientY); bx = e.clientX; by = e.clientY; });
+  window.addEventListener('click', () => { colour = palette[Math.floor(Math.random() * palette.length)]; });
 })();
 </script>
+
+</body>
+</html>
