@@ -118,10 +118,15 @@ input[type=checkbox]:checked::after{content:'';position:absolute;left:4px;top:1p
 .how-item{font-family:var(--mono);font-size:11px;color:var(--text-3);display:flex;gap:8px;padding:3px 0}
 .how-item span{color:var(--accent)}
 footer{text-align:center;margin-top:28px;font-family:var(--mono);font-size:10px;color:var(--text-4);letter-spacing:2px;text-transform:uppercase}
+.shortcuts-grid{display:flex;flex-wrap:wrap;gap:10px}
+.shortcut-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--border);flex:1;min-width:200px}
+.shortcut-keys{display:flex;align-items:center;gap:4px;flex-shrink:0}
+kbd{font-family:var(--mono);font-size:11px;font-weight:500;padding:3px 8px;border-radius:6px;border:1px solid var(--border-h);background:var(--card);color:var(--text-2);box-shadow:0 2px 0 var(--border-h);line-height:1.4}
+.kbd-plus{font-family:var(--mono);font-size:10px;color:var(--text-4)}
+.shortcut-desc{font-family:var(--mono);font-size:11px;color:var(--text-3)}
 .toast-wrap{background:var(--card);border:1px solid var(--border-h);border-radius:10px;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--accent-text);transform:translateY(60px);opacity:0;transition:all .35s cubic-bezier(.68,-.55,.27,1.55);pointer-events:none}
 .toast-wrap.show{transform:translateY(0);opacity:1}
 #toastOuter{position:fixed;bottom:20px;right:20px;z-index:999}
-/* from-preview highlight */
 .from-preview{font-family:var(--mono);font-size:11px;color:var(--accent-text);min-height:16px;margin-top:4px}
 </style>
 </head>
@@ -162,7 +167,7 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
 
       <div class="div"></div>
 
-      <!-- ★ NEW: From user tag -->
+      <!-- From user tag -->
       <div style="margin-bottom:14px">
         <div class="flabel">From user tag</div>
         <input type="text" id="fromUserTag" value="[3W]" placeholder="e.g. [3W] — appended after username">
@@ -259,6 +264,17 @@ Message-ID: &lt;oxaO0r2@geopod-ismtpd-20&gt;</textarea>
     </div>
   </div>
 
+  <!-- KEYBOARD SHORTCUTS -->
+  <div class="card fu d5" style="margin-top:12px">
+    <div class="sec-label">Keyboard shortcuts</div>
+    <div class="shortcuts-grid">
+      <div class="shortcut-item">
+        <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="kbd-plus">+</span><kbd>Enter</kbd></div>
+        <div class="shortcut-desc">Process &amp; copy output to clipboard</div>
+      </div>
+    </div>
+  </div>
+
   <footer class="fu d5">mohamed hichy — WMN2 © 2025</footer>
 </div>
 
@@ -320,12 +336,12 @@ function setSender(on) {
 }
 document.getElementById('senderSw').addEventListener('click', () => setSender(!senderOn));
 
-// ── From preview (NEW) ───────────────────────────────────────
+// ── From preview ─────────────────────────────────────────────
 function updateFromPreview() {
   const tag = document.getElementById('fromUserTag').value.trim();
   const raw = document.getElementById('inputText').value;
-  // grab first From line user part
-  const m = raw.match(/^From:\s*(?:.*?)<([^@]+)@/im) ||
+  // Try angle-bracket format first: From: Name <user@domain>
+  const m = raw.match(/^From:\s*(?:.*?)<([^@>]+)@/im) ||
             raw.match(/^From:\s*([^@<\s]+)@/im);
   if (m) {
     const user = m[1].trim();
@@ -353,25 +369,39 @@ function updateSenderPreview() {
 );
 
 // ── Core processing functions ────────────────────────────────
+
+// FIX: Use a single unified regex pass to avoid double-processing From lines.
+// Strategy: detect both formats in one replace, use a flag to skip already-matched lines.
 function replaceFrom(t, rep) {
   const r   = rep.trim();
   const tag = document.getElementById('fromUserTag').value.trim();
 
-  // Format: From: Name <user@domain>
-  let o = t.replace(/^From:\s*(.*?)<(.*?)@(.*?)>/gim, (m, name, user) => {
-    const u = tag ? user + tag : user;
-    return r
-      ? `From: ${name.trim()} <${u}@${r}>`
-      : `From: ${name.trim()} <${u}>`;
-  });
+  return t.replace(/^From:(.*)$/gim, (match, rest) => {
+    // Format 1: From: Display Name <user@domain>
+    const angleMatch = rest.match(/^(\s*)(.*?)\s*<([^@>]+)@[^>]*>/);
+    if (angleMatch) {
+      const name = angleMatch[2].trim();
+      const user = angleMatch[3];
+      const u    = tag ? user + tag : user;
+      if (name) {
+        return r ? `From: ${name} <${u}@${r}>` : `From: ${name} <${u}>`;
+      } else {
+        // No display name: From: <user@domain>
+        return r ? `From: <${u}@${r}>` : `From: <${u}>`;
+      }
+    }
 
-  // Format: From: user@domain  (no display name)
-  o = o.replace(/^From:\s*([^@<\s]+)@([^\s>]+)/gim, (m, user) => {
-    const u = tag ? user + tag : user;
-    return r ? `From: ${u}@${r}` : `From: ${u}`;
-  });
+    // Format 2: From: user@domain  (bare, no angle brackets)
+    const bareMatch = rest.match(/^\s*([^@<\s]+)@\S+/);
+    if (bareMatch) {
+      const user = bareMatch[1];
+      const u    = tag ? user + tag : user;
+      return r ? `From: ${u}@${r}` : `From: ${u}`;
+    }
 
-  return o;
+    // No email found — return line unchanged
+    return match;
+  });
 }
 
 function tagMsgId(t, tag) {
@@ -403,7 +433,7 @@ function stripHeaders(t, keepRcv, keepRpl) {
     const match = del.find(h => ll.startsWith(h));
     if (match) {
       if (ll.startsWith('received:') && keepRcv) { out.push(line); skip = false; continue; }
-      if (ll.startsWith('reply-to:') && keepRpl)  { out.push(line); skip = false; continue; }
+      if (ll.startsWith('reply-to:') && keepRpl) { out.push(line); skip = false; continue; }
       skip = true; continue;
     }
     if (skip && /^[ \t]/.test(line)) continue;
@@ -534,84 +564,120 @@ document.getElementById('themeBtn').addEventListener('click', () => { dark = !da
 process();
 </script>
 
-<!-- Oil Painting Background -->
+<!-- Oil Painting Background — exact port of http://wonderfl.net/c/92Ul -->
 <script>
 (function(){
-  const canvas = document.getElementById('oilCanvas');
-  const ctx    = canvas.getContext('2d');
-  let W, H;
+  var canvas  = document.getElementById('oilCanvas');
+  var context = canvas.getContext('2d');
+  var width, height;
 
-  const palette = ['#3d6b4f','#2a5038','#5a8f6e','#8ab89a','#c4d9cb','#b0c4b1','#4a7c5f','#6aab83'];
-  let colour = palette[Math.floor(Math.random() * palette.length)];
+  // site's green palette instead of random hex
+  // Open Color — https://yeun.github.io/open-color/
+  var palette = [
+    // red
+    '#fff5f5','#ffe3e3','#ffc9c9','#ffa8a8','#ff8787','#ff6b6b','#fa5252','#f03e3e','#e03131','#c92a2a',
+    // pink
+    '#fff0f6','#ffdeeb','#fcc2d7','#faa2c1','#f783ac','#f06595','#e64980','#d6336c','#c2255c','#a61e4d',
+    // grape
+    '#f8f0fc','#f3d9fa','#eebefa','#e599f7','#da77f2','#cc5de8','#be4bdb','#ae3ec9','#9c36b5','#862e9c',
+    // violet
+    '#f3f0ff','#e5dbff','#d0bfff','#b197fc','#9775fa','#845ef7','#7950f2','#6741d9','#5f3dc4','#5c3bc3',
+    // indigo
+    '#edf2ff','#dbe4ff','#bac8ff','#91a7ff','#748ffc','#5c7cfa','#4c6ef5','#4263eb','#3b5bdb','#364fc7',
+    // blue
+    '#e7f5ff','#d0ebff','#a5d8ff','#74c0fc','#4dabf7','#339af0','#228be6','#1c7ed6','#1971c2','#1864ab',
+    // cyan
+    '#e3fafc','#c5f6fa','#99e9f2','#66d9e8','#3bc9db','#22b8cf','#15aabf','#1098ad','#0c8599','#0b7285',
+    // teal
+    '#e6fcf5','#c3fae8','#96f2d7','#63e6be','#38d9a9','#20c997','#12b886','#0ca678','#099268','#087f5b',
+    // green
+    '#ebfbee','#d3f9d8','#b2f2bb','#8ce99a','#69db7c','#51cf66','#40c057','#37b24d','#2f9e44','#2b8a3e',
+    // lime
+    '#f4fce3','#e9fac8','#d8f5a2','#c0eb75','#a9e34b','#94d82d','#82c91e','#74b816','#66a80f','#5c940d',
+    // yellow
+    '#fff9db','#fff3bf','#ffec99','#ffe066','#ffd43b','#fcc419','#fab005','#f59f00','#f08c00','#e67700',
+    // orange
+    '#fff4e6','#ffe8cc','#ffd8a8','#ffc078','#ffa94d','#ff922b','#fd7e14','#f76707','#e8590c','#d9480f'
+  ];
+  var colour  = palette[Math.floor(Math.random() * palette.length)];
 
-  let startPos = {x:0, y:0};
-  let prevPos  = {x:0, y:0};
-  let dist     = {x:0, y:0};
+  // same seed as original
+  var startPos = {x: window.innerWidth/2, y: window.innerHeight/2};
+  var prevPos  = {x: window.innerWidth/2, y: 0};
+  var dist     = {x: 0, y: 0};
 
   function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-    startPos = {x: W/2, y: H/2};
-    prevPos  = {x: W/2, y: 0};
+    width  = canvas.width  = window.innerWidth;
+    height = canvas.height = window.innerHeight;
   }
   resize();
   window.addEventListener('resize', resize);
 
-  function paint(ex, ey) {
-    const dx       = prevPos.x - startPos.x;
-    const dy       = prevPos.y - startPos.y;
-    const distance = Math.sqrt(dx*dx + dy*dy) || 1;
-    const a        = distance * 10 * (Math.pow(Math.random(), 2) - 0.5);
-    const r        = Math.random() - 0.5;
-    const size     = (Math.random() * 15) / distance;
+  // The canvas has pointer-events:none so it sits behind the UI.
+  // We listen on window — clientX/Y match canvas coords exactly
+  // because the canvas is fixed full-screen at top:0, left:0.
 
-    dist.x = dx * Math.sin(0.5) + startPos.x;
-    dist.y = dy * Math.cos(0.5) + startPos.y;
+  var strokeCount = 0;
+
+  // exact original MouseMove logic
+  window.addEventListener('mousemove', function(e) {
+    var distance = Math.sqrt(
+      Math.pow(prevPos.x - startPos.x, 2) +
+      Math.pow(prevPos.y - startPos.y, 2)
+    );
+
+    var a    = distance * 10 * (Math.pow(Math.random(), 2) - 0.5);
+    var r    = Math.random() - 0.5;
+    var size = (Math.random() * 15) / distance;
+
+    dist.x = (prevPos.x - startPos.x) * Math.sin(0.5) + startPos.x;
+    dist.y = (prevPos.y - startPos.y) * Math.cos(0.5) + startPos.y;
 
     startPos.x = prevPos.x;
     startPos.y = prevPos.y;
-    prevPos.x  = ex;
-    prevPos.y  = ey;
 
-    const lw = (Math.random() + 20/10 - 0.5) * size + (1 - Math.random() + 30/20 - 0.5) * size;
-    ctx.lineWidth   = lw;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-    ctx.strokeStyle = colour;
-    ctx.fillStyle   = colour;
+    prevPos.x = e.clientX;
+    prevPos.y = e.clientY;
 
-    ctx.beginPath();
-    ctx.moveTo(startPos.x, startPos.y);
-    ctx.quadraticCurveTo(dist.x, dist.y, prevPos.x, prevPos.y);
-    ctx.moveTo(startPos.x + a, startPos.y + a);
-    ctx.lineTo(startPos.x + r + a, startPos.y + r + a);
-    ctx.stroke();
-    ctx.fill();
-    ctx.closePath();
-  }
+    var lWidth = (Math.random() + 20/10 - 0.5) * size + (1 - Math.random() + 30/20 - 0.5) * size;
+    context.lineWidth = lWidth;
+    context.lineCap   = 'round';
+    context.lineJoin  = 'round';
 
-  let angle = Math.random() * Math.PI * 2;
-  let bx = W/2, by = H/2;
-  const speed = 1.5;
-  let stepCount = 0;
+    context.beginPath();
+    context.moveTo(startPos.x, startPos.y);
+    context.quadraticCurveTo(dist.x, dist.y, prevPos.x, prevPos.y);
 
-  function autoStep() {
-    angle += (Math.random() - 0.5) * 0.18;
-    bx += Math.cos(angle) * speed;
-    by += Math.sin(angle) * speed;
-    if (bx < 60)   { angle = Math.random() * Math.PI - Math.PI/2; bx = 61; }
-    if (bx > W-60) { angle = Math.random() * Math.PI + Math.PI/2; bx = W-61; }
-    if (by < 60)   { angle = Math.random() * Math.PI; by = 61; }
-    if (by > H-60) { angle = -Math.random() * Math.PI; by = H-61; }
-    paint(bx, by);
-    stepCount++;
-    if (stepCount % 120 === 0) colour = palette[Math.floor(Math.random() * palette.length)];
-    requestAnimationFrame(autoStep);
-  }
-  autoStep();
+    context.fillStyle   = colour;
+    context.strokeStyle = colour;
 
-  window.addEventListener('mousemove', e => { paint(e.clientX, e.clientY); bx = e.clientX; by = e.clientY; });
-  window.addEventListener('click', () => { colour = palette[Math.floor(Math.random() * palette.length)]; });
+    context.moveTo(startPos.x + a, startPos.y + a);
+    context.lineTo(startPos.x + r + a, startPos.y + r + a);
+
+    context.stroke();
+    context.fill();
+    context.closePath();
+
+    strokeCount++;
+    if (strokeCount % 80 === 0) {
+      colour = palette[Math.floor(Math.random() * palette.length)];
+      context.fillStyle   = colour;
+      context.strokeStyle = colour;
+    }
+  }, false);
+
+  // click → change colour
+  window.addEventListener('click', function(e) {
+    colour = palette[Math.floor(Math.random() * palette.length)];
+    context.fillStyle   = colour;
+    context.strokeStyle = colour;
+  }, false);
+
+  // double-click → clear canvas
+  window.addEventListener('dblclick', function(e) {
+    context.clearRect(0, 0, width, height);
+  }, false);
+
 })();
 </script>
 
